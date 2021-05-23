@@ -17,6 +17,7 @@ filetype plugin on
 filetype indent on
 
 set encoding=utf-8
+set relativenumber
 
 
 " === User Interface ===

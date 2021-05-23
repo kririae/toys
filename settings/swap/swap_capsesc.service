@@ -1,0 +1,9 @@
+[Unit]
+Description=Swap <Capslock> <Esc>
+
+[Service]
+Type=simple
+ExecStart=/home/kririae/.config/swap.sh
+
+[Install]
+WantedBy=multi-user.target
