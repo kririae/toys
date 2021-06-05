@@ -1,0 +1,12 @@
+crepl
+=====
+
+DESCRIPTION
+A simple interpreter for C, gcc required.
+If you want to use other compiler, modify COMPILER in `stat.h`
+and recompile with cmake yourself.
+
+An implementation for http://jyywiki.cn/OS/2021/labs/M4
+
+AUTHOR
+kr2(kriaeth@outlook.com)
