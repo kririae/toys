@@ -2,7 +2,7 @@ crepl
 =====
 
 DESCRIPTION
-A simple interpreter for C, gcc required.
+A simple repl for C, gcc required.
 If you want to use other compiler, modify COMPILER in `stat.h`
 and recompile with cmake yourself.
 

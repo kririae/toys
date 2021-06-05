@@ -57,12 +57,11 @@ static inline bool add_func(char *stat) {
 }
 
 int main(int argc, char *argv[]) {
-  remove(global_file);
-  parse_args(argc, argv);
-
   // create global file
+  remove(global_file);
   FILE *f = fopen(global_file, "a");
   fclose(f);
+  parse_args(argc, argv);
 
   // static char line[4096];
   while (true) {

@@ -1,0 +1,4 @@
+1. Add local variable support
+2. Performance optimize
+3. Add global variable support
+4. When adding a function, check if its compilable

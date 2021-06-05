@@ -1,0 +1,8 @@
+Toys
+====
+
+Settings for some tools.
+
+- crepl/    : A simple c repl
+- kproxy/   : A local proxy inplemented in rust
+- settings/ : .dotfiles
