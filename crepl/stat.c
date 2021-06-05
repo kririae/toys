@@ -3,6 +3,7 @@
 //
 
 #include "stat.h"
+#include "common.h"
 #include <assert.h>
 #include <ctype.h>
 #include <dlfcn.h>
@@ -52,8 +53,8 @@ int interpret(char *stat) {
   if (compile(wrapper, buffer) == false) {
     // TODO
     // shared object file is not created
-    printf("Compile Error\n");
-    return 0;
+    printf(ANSI_COLOR_RED "Compile Error\n" ANSI_COLOR_RESET);
+    return -1;
   }
 
   // compile succeed
@@ -86,27 +87,28 @@ int interpret(char *stat) {
 }
 
 bool compile(char *stat, char *so_path) {
-  // DESCRIPTION
-  // 	 compile function will compile *stat to a shared object
-  // 	 will write so_path to the shared object path
-  //   do not forget to remove so_path
-  // RETURN
-  //   true as succeed, false as failed
+  /* DESCRIPTION
+   *   compile function will compile *stat to a shared object
+   *   will write so_path to the shared object path
+   *   do not forget to remove so_path
+   * RETURN
+   *   true as succeed, false as failed
+   */
+
   assert(so_path != NULL);
   static int cnt = 0;
   ++cnt;
 
-  char template_cs[256];
-  char template_so[256];
+  const int FNAME_N = 256;
+  char source_code_fname[FNAME_N], shared_objects_fname[FNAME_N];
 
-  snprintf(template_cs, sizeof(template_cs), "/tmp/crepl-source-code-%d.c",
-           cnt);
-  snprintf(template_so, sizeof(template_so), "/tmp/crepl-shared-object-%d.so",
+  snprintf(source_code_fname, FNAME_N, "/tmp/crepl-source-code-%d.c", cnt);
+  snprintf(shared_objects_fname, FNAME_N, "/tmp/crepl-shared-object-%d.so",
            cnt);
 
-  FILE *f_cs = fopen(template_cs, "w");
+  FILE *f_cs = fopen(source_code_fname, "w");
   if (f_cs == NULL) {
-    fprintf(stderr, "Failed to open file %s.\n", template_cs);
+    fprintf(stderr, "Failed to open file %s.\n", source_code_fname);
     return false;
   }
 
@@ -114,32 +116,36 @@ bool compile(char *stat, char *so_path) {
   fflush(f_cs); // flush output to avoid empty file
 
   // compile the source code
-  pid_t pid;
-  int ret;
+  int status;
+  pid_t pid = fork();
 
-  if ((pid = fork()) < 0) {
+  if (pid < 0) {
     goto failed;
   } else if (pid == 0) {
-    char *cmd[] = { COMPILER,    "-shared",   "-fpic",     "-o",
-                    template_so, template_cs, global_file, (char *)0 };
-    ret         = execvp(COMPILER, cmd);
+    char *cmd[] = {
+      COMPILER,          "-shared",   "-fpic",  "-o", shared_objects_fname,
+      source_code_fname, global_file, (char *)0
+    };
+
+    execvp(COMPILER, cmd);
+  } else {
+    waitpid(pid, &status, 0);
   }
 
-  waitpid(pid, NULL, 0);
   // compile failed
-  if (ret == -1)
+  if (status != 0)
     goto failed;
 
   // compile succeed
-  strncpy(so_path, template_so, strlen(template_so) + 1);
+  strncpy(so_path, shared_objects_fname, strlen(shared_objects_fname) + 1);
 
 succeed:
   fclose(f_cs);
-  remove(template_cs);
+  remove(source_code_fname);
   return true;
 
 failed:
   fclose(f_cs);
-  remove(template_cs);
+  remove(source_code_fname);
   return false;
 }

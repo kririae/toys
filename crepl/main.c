@@ -8,10 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "stat.h"
+#include "common.h"
 
 char global_file[] = "/tmp/crepl-global-file.c";
+
 static void usage(int argc, char *argv[]) {
   printf("Usage: %s [OPTION...]\n", argv[0]);
   printf("\t-e, --execute     execute C statement\n");
@@ -38,9 +41,6 @@ static inline void parse_args(int argc, char *argv[]) {
     default: usage(argc, argv); stop(EXIT_SUCCESS);
     }
   }
-
-  // usage(argc, argv);
-  // stop(0);
 }
 
 static inline bool add_func(char *stat) {
@@ -57,30 +57,37 @@ static inline bool add_func(char *stat) {
 }
 
 int main(int argc, char *argv[]) {
+  remove(global_file);
   parse_args(argc, argv);
 
   // create global file
   FILE *f = fopen(global_file, "a");
   fclose(f);
 
-  static char line[4096];
+  // static char line[4096];
   while (true) {
-    printf("crepl> ");
-    fflush(stdout);
-    if (!fgets(line, sizeof(line), stdin)) {
-      break;
-    }
+    char *line;
+    size_t len;
 
-    size_t len    = strlen(line);
-    line[len - 1] = '\0'; // remove \n
+    if ((line = readline("crepl> ")) == NULL)
+      break;
+    add_history(line);
 
     if (isfunction(line)) {
       // compile(line, path);
-      add_func(line);
-      printf("Add: %s\n", line);
+      bool ret = add_func(line);
+      if (ret) {
+        printf("Add: %s\n", line);
+      }
     } else {
-      printf("(%s) == %d\n", line, interpret(line));
+      int ret = interpret(line);
+      // TODO
+      if (ret != -1) {
+        printf("(%s) == %d\n", line, ret);
+      }
     }
+
+    free(line);
   }
 
   stop(EXIT_SUCCESS);
