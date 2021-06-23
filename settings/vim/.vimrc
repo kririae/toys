@@ -17,8 +17,6 @@ filetype plugin on
 filetype indent on
 
 set encoding=utf-8
-set relativenumber
-
 
 " === User Interface ===
 set number
@@ -44,7 +42,6 @@ set tabstop=2
 
 set fileencoding=utf-8
 
-
 " === Search ===
 
 set ignorecase
@@ -55,7 +52,6 @@ set hlsearch
 
 " === Fonts ===
 syntax enable
-
 
 " === Plugins ===
 
@@ -80,7 +76,7 @@ let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
 
 " Color Theme
-Plug 'cocopon/iceberg.vim'
+Plug 'sainnhe/sonokai'
 
 " Easy Motion
 Plug 'easymotion/vim-easymotion'
@@ -114,4 +110,18 @@ Plug 'mhinz/vim-startify'
 
 call plug#end()
 
-colorscheme iceberg
+let g:sonokai_diagnostic_line_hightlight = 0
+colorscheme sonokai
+
+" Start NERDTree when Vim starts with a directory argument.
+" autocmd StdinReadPre * let s:std_in=1
+" autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
+"    \ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
+
+" Start NERDTree and put the cursor back in the other window.
+autocmd VimEnter * NERDTree | wincmd p
+
+" Exit Vim if NERDTree is the only window left.
+autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() |
+    \ quit | endif
+
