@@ -7,6 +7,8 @@ Particle::Particle(float _x, float _y, float _z) : x(_x), y(_y), z(_z)
 {
 }
 
+Particle::~Particle() = default;
+
 SPHParticle::SPHParticle(float _x, float _y, float _z)
     : Particle::Particle(_x, _y, _z)
 {
@@ -18,3 +20,5 @@ float SPHParticle::sph_calc_rho()
   rho = 0.5;
   return rho;
 }
+
+SPHParticle::~SPHParticle() = default;

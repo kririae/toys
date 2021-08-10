@@ -23,6 +23,7 @@ class Shader {
                         float x2) const;
   virtual void set_vec3(const std::string &name, const glm::vec3 &value) const;
   virtual void set_mat4(const std::string &name, const glm::mat4 &value) const;
+  virtual ~Shader();
 
  protected:
   unsigned int id{};

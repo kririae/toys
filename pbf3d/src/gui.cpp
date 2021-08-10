@@ -5,8 +5,8 @@
 #include "gui.hpp"
 #include "common.hpp"
 #include "particle.hpp"
-#include "shader.hpp"
 #include <iostream>
+#include <sstream>
 
 GUI::GUI(int WIDTH, int HEIGHT) : width(WIDTH), height(HEIGHT)
 {
@@ -19,7 +19,7 @@ GUI::GUI(int WIDTH, int HEIGHT) : width(WIDTH), height(HEIGHT)
   glfwWindowHint(GLFW_SAMPLES, 4);
 
   // assign window
-  window = glfwCreateWindow(WIDTH, HEIGHT, "pbf3d", nullptr, nullptr);
+  window = glfwCreateWindow(WIDTH, HEIGHT, "pbf3d (fps: 60)", nullptr, nullptr);
   if (window == nullptr) {
     std::cerr << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
@@ -34,21 +34,18 @@ GUI::GUI(int WIDTH, int HEIGHT) : width(WIDTH), height(HEIGHT)
   glViewport(0, 0, WIDTH, HEIGHT);
 
   glfwSetFramebufferSizeCallback(
-      window, [](GLFWwindow *window, int width, int height) {
-        std::clog << "window size changed to " << width << " " << height
+      window, [](GLFWwindow *, int _width, int _height) {
+        std::clog << "window size changed to " << _width << " " << _height
                   << std::endl;
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, _width, _height);
       });
-}
-
-GUI::GUI() : GUI(800, 400)
-{
 }
 
 void GUI::main_loop(const std::function<void()> &callback)
 {
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT);
+    callback();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -59,10 +56,6 @@ GUI::~GUI() = default;
 
 RTGUI_particles::RTGUI_particles(int WIDTH, int HEIGHT)
     : GUI::GUI(WIDTH, HEIGHT)
-{
-}
-
-RTGUI_particles::RTGUI_particles() : RTGUI_particles(800, 400)
 {
 }
 
@@ -119,6 +112,8 @@ void RTGUI_particles::main_loop(const std::function<void()> &callback)
     glClearColor(0.921f, 0.925f, 0.933f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    process_input();
+    refresh_fps();
     callback();
 
     render_particles();
@@ -130,8 +125,14 @@ void RTGUI_particles::main_loop(const std::function<void()> &callback)
 
 void RTGUI_particles::render_particles() const
 {
+  static float rotate_y = 0;
+  rotate_y += 0.005;
+  if (rotate_y > 360.0f)
+    rotate_y = 0;
+
   auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0));
   model = glm::scale(model, glm::vec3(1.0f));
+  model = glm::rotate(model, rotate_y, glm::vec3(0.0f, 1.0f, 0.0f));
 
   auto camera_pos = glm::vec3(1.0f, 3.0f, 6.0f);
   auto camera_center = glm::vec3(0.0f);
@@ -160,6 +161,32 @@ void RTGUI_particles::del()
   shader.del();
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
+}
+
+void RTGUI_particles::process_input()
+{
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    std::clog << std::endl;
+    std::clog << "exit" << std::endl;
+    glfwSetWindowShouldClose(window, true);
+  }
+}
+
+void RTGUI_particles::refresh_fps() const
+{
+  static int n_frames = 0;
+  static auto last_time = glfwGetTime();
+  auto cur_time = glfwGetTime();
+  auto delta = cur_time - last_time;
+  ++n_frames;
+
+  if (delta > 1.0f) {
+    std::stringstream win_title;
+    win_title << "pbf3d (fps: " << n_frames / delta << ")";
+    glfwSetWindowTitle(window, win_title.str().c_str());
+    n_frames = 0;
+    last_time = cur_time;
+  }
 }
 
 RTGUI_particles::~RTGUI_particles() = default;

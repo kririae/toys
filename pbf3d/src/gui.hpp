@@ -14,20 +14,20 @@ class SPHParticle;
 class GUI {
  public:
   GUI(int WIDTH, int HEIGHT);
-  GUI();
+  GUI(const GUI &) = delete;
+  GUI &operator=(const GUI &) = delete;
   virtual ~GUI();
   virtual void main_loop(const std::function<void()> &callback);
 
  protected:
   GLFWwindow *window{};
-  int width{}, height{};
+  int width, height;
 };
 
 class RTGUI_particles : public GUI {
   // REAL-TIME GUI for Lagrange View stimulation(particles)
  public:
   RTGUI_particles(int WIDTH, int HEIGHT);
-  RTGUI_particles();
   ~RTGUI_particles() override;
 
   void set_particles(const std::vector<SPHParticle> &_p);
@@ -35,10 +35,14 @@ class RTGUI_particles : public GUI {
   void del();
 
  protected:
-  std::vector<SPHParticle> p;
+  std::vector<SPHParticle> p{};
   void render_particles() const;
   unsigned int VAO{}, VBO{};
   Shader shader{};
+
+ private:
+  void refresh_fps() const;
+  void process_input();
 };
 
 #endif  // PBF3D_SRC_GUI_HPP_

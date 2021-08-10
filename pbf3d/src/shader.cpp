@@ -39,13 +39,13 @@ Shader::Shader()
   const char *v_code_c = v_code.c_str();
   const char *f_code_c = f_code.c_str();
 
-  auto gl_compile_info = [](auto Shader) {
+  auto gl_compile_info = [](auto _shader) {
     int success;
     char info_log[512];
-    glGetShaderiv(Shader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
-      glGetShaderInfoLog(Shader, 512, nullptr, info_log);
-      std::cerr << "failed to compile shader\n" << info_log << std::endl;
+      glGetShaderInfoLog(_shader, 512, nullptr, info_log);
+      std::cerr << "failed to compile _shader\n" << info_log << std::endl;
       glfwTerminate();
     }
   };
@@ -124,3 +124,5 @@ void Shader::set_mat4(const std::string &name, const glm::mat4 &value) const
   int val_loc = glGetUniformLocation(id, name.c_str());
   glUniformMatrix4fv(val_loc, 1, GL_FALSE, glm::value_ptr(value));
 }
+
+Shader::~Shader() = default;

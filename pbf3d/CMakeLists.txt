@@ -1,13 +1,18 @@
 cmake_minimum_required(VERSION 3.21)
+cmake_policy(SET CMP0054 NEW)
 project(pbf3d)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -pedantic-errors -Werror -Wextra -Wshadow -Wpointer-arith -Wformat=2 -Weffc++ -Wall")
+
+if (${IS_CLANG_COMPILER})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wloop-analysis")
+endif ()
 
 file(GLOB source
   "src/*.cpp")
 file(GLOB lib_source
   "libs/src/*.c*")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS -Wall)
 include_directories(libs/include)
 
 find_package(glfw3 3.3 REQUIRED)
