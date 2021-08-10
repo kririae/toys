@@ -7,12 +7,16 @@ file(GLOB lib_source
   "libs/src/*.c*")
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS -Wall)
 include_directories(libs/include)
 
 find_package(glfw3 3.3 REQUIRED)
 
-add_executable(pbf3d ${source} ${lib_source})
+add_executable(pbf3d ${source} ${lib_source} src/common.hpp)
 
 MESSAGE(STATUS "find source: " ${source})
 MESSAGE(STATUS "find lib_source: " ${lib_source})
 target_link_libraries(pbf3d PUBLIC glfw ${CMAKE_DL_LIBS})
+
+# enable_testing()
+# add_subdirectory("${PROJECT_SOURCE_DIR}/tests")

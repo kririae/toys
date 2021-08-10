@@ -141,7 +141,7 @@ class Subvol:
 
 
 # Path, suffix name, snapshot interval, send snapshot interval
-BACKUP_LIST = [Subvol(Path('/'), 'root', 2, 5),
+BACKUP_LIST = [Subvol(Path('/'), 'root', 1, 3),
                Subvol(Path('/home'), 'home', 1, 2)]
 
 
