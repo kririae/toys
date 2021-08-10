@@ -8,11 +8,13 @@
 #include <memory>
 #include <vector>
 
+class PBDSolver;
+
 class Particle {
  public:
   float x, y, z;
   Particle(float _x, float _y, float _z);
-  virtual ~Particle();
+  virtual ~Particle() = default;
 
  protected:
 };
@@ -21,11 +23,15 @@ class SPHParticle : public Particle {
  public:
   float rho{0};
   SPHParticle(float _x, float _y, float _z);
-  virtual float sph_calc_rho();
-  ~SPHParticle() override;
+  SPHParticle(const SPHParticle &p) = default;
+  SPHParticle &operator=(const SPHParticle &p) = default;
+  ~SPHParticle() override = default;
 
- protected:
-  std::shared_ptr<std::vector<SPHParticle>> parent{};
+  void set_parent(PBDSolver *solver);
+  float sph_calc_rho();
+
+ private:
+  PBDSolver *parent{nullptr};
 };
 
 #endif  // PBF3D__PARTICLE_HPP_

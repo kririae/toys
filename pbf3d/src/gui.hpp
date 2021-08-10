@@ -16,7 +16,7 @@ class GUI {
   GUI(int WIDTH, int HEIGHT);
   GUI(const GUI &) = delete;
   GUI &operator=(const GUI &) = delete;
-  virtual ~GUI();
+  virtual ~GUI() = default;
   virtual void main_loop(const std::function<void()> &callback);
 
  protected:
@@ -28,7 +28,7 @@ class RTGUI_particles : public GUI {
   // REAL-TIME GUI for Lagrange View stimulation(particles)
  public:
   RTGUI_particles(int WIDTH, int HEIGHT);
-  ~RTGUI_particles() override;
+  ~RTGUI_particles() override = default;
 
   void set_particles(const std::vector<SPHParticle> &_p);
   void main_loop(const std::function<void()> &callback) override;

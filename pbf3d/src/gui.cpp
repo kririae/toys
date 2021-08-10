@@ -11,7 +11,6 @@
 GUI::GUI(int WIDTH, int HEIGHT) : width(WIDTH), height(HEIGHT)
 {
   // OpenGL initialization
-
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -51,8 +50,6 @@ void GUI::main_loop(const std::function<void()> &callback)
     glfwPollEvents();
   }
 }
-
-GUI::~GUI() = default;
 
 RTGUI_particles::RTGUI_particles(int WIDTH, int HEIGHT)
     : GUI::GUI(WIDTH, HEIGHT)
@@ -165,9 +162,9 @@ void RTGUI_particles::del()
 
 void RTGUI_particles::process_input()
 {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-    std::clog << std::endl;
-    std::clog << "exit" << std::endl;
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS ||
+      glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS) {
+    std::clog << "pbf3d quited" << std::endl;
     glfwSetWindowShouldClose(window, true);
   }
 }
@@ -188,5 +185,3 @@ void RTGUI_particles::refresh_fps() const
     last_time = cur_time;
   }
 }
-
-RTGUI_particles::~RTGUI_particles() = default;
