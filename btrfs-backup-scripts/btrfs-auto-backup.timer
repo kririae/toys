@@ -1,0 +1,9 @@
+[Unit]
+Description=Execute btrfs snapshot daily
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6hour
+
+[Install]
+WantedBy=timers.target

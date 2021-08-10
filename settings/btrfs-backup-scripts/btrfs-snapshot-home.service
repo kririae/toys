@@ -1,5 +1,0 @@
-[Unit]
-Description=Make btrfs snapshots for /home
-
-[Service]
-ExecStart=/bin/bash ~/.capture-snapshot.sh
