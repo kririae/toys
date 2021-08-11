@@ -77,10 +77,10 @@ void RTGUI_particles::set_particles(const std::vector<SPHParticle> &_p)
   std::vector<float> points;
   points.reserve(p.size() * 4);
   for (auto &i : p) {
-    points.push_back(i.x);
-    points.push_back(i.y);
-    points.push_back(i.z);
-    points.push_back((i.y + 1.0f) / 2);
+    points.push_back(i.pos.x);
+    points.push_back(i.pos.y);
+    points.push_back(i.pos.z);
+    points.push_back((i.pos.y + 1.0f) / 2);
   }
 
   glBufferData(GL_ARRAY_BUFFER,

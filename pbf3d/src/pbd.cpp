@@ -9,14 +9,31 @@ PBDSolver::PBDSolver(float _radius)
 {
 }
 
-void PBDSolver::callback()
+void PBDSolver::set_gui(RTGUI_particles *gui)
 {
+  gui_ptr = gui;
 }
 
-void PBDSolver::add_particle(SPHParticle &&p)
+void PBDSolver::callback()
 {
-  p.set_parent(this);
-  ch_ptr->add_particle(std::move(p));
+  assert(gui_ptr != nullptr);
+  const glm::vec3 g(0.0f, -9.8f, 0.0f);
+  for (auto &i : ch_ptr->get_data()) {
+    i.v += delta_t * g;
+    i.pos += delta_t * i.v;
+
+    if (i.pos.y <= -1) {
+      i.pos.y = -1;
+      i.v.y = 0;
+    }
+  }
+  gui_ptr->set_particles(get_data());
+}
+
+void PBDSolver::add_particle(const SPHParticle &p)
+{
+  assert(ch_ptr != nullptr);
+  ch_ptr->add_particle(p);
 }
 
 float PBDSolver::poly6(float r, float d)

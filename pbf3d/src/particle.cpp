@@ -2,26 +2,27 @@
 // Created by kr2 on 8/9/21.
 //
 #include "particle.hpp"
-#include "pbd.hpp"
+#include "common.hpp"
 #include <memory>
 
-Particle::Particle(float _x, float _y, float _z) : x(_x), y(_y), z(_z)
+Particle::Particle(glm::vec3 _pos) : pos(_pos)
 {
 }
 
-SPHParticle::SPHParticle(float _x, float _y, float _z)
-    : Particle::Particle(_x, _y, _z)
+Particle::Particle(float x, float y, float z) : pos(x, y, z)
 {
 }
 
-void SPHParticle::set_parent(PBDSolver *solver)
+float Particle::dist(const Particle &p) const
 {
-  parent = solver;
+  return glm::sqrt(glm::pow(pos.x - p.pos.x, 2) + glm::pow(pos.y - p.pos.y, 2) +
+                   glm::pow(pos.z - p.pos.z, 2));
 }
 
-float SPHParticle::sph_calc_rho()
+SPHParticle::SPHParticle(glm::vec3 _pos) : Particle::Particle(_pos)
 {
-  // TODO: `parent` as neighborhood search data structure
-  rho = 0.5;
-  return rho;
+}
+
+SPHParticle::SPHParticle(float x, float y, float z) : Particle(x, y, z)
+{
 }

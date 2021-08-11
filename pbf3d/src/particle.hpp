@@ -5,16 +5,17 @@
 #ifndef PBF3D__PARTICLE_HPP_
 #define PBF3D__PARTICLE_HPP_
 
+#include "common.hpp"
 #include <memory>
 #include <vector>
 
-class PBDSolver;
-
 class Particle {
  public:
-  float x, y, z;
-  Particle(float _x, float _y, float _z);
+  glm::vec3 pos;
+  Particle(glm::vec3 _pos);
+  Particle(float x, float y, float z);
   virtual ~Particle() = default;
+  float dist(const Particle &p) const;
 
  protected:
 };
@@ -22,16 +23,14 @@ class Particle {
 class SPHParticle : public Particle {
  public:
   float rho{0};
-  SPHParticle(float _x, float _y, float _z);
+  glm::vec3 v{0};
+  SPHParticle(glm::vec3 _pos);
+  SPHParticle(float x, float y, float z);
   SPHParticle(const SPHParticle &p) = default;
   SPHParticle &operator=(const SPHParticle &p) = default;
   ~SPHParticle() override = default;
 
-  void set_parent(PBDSolver *solver);
-  float sph_calc_rho();
-
  private:
-  PBDSolver *parent{nullptr};
 };
 
 #endif  // PBF3D__PARTICLE_HPP_

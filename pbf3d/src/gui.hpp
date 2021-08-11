@@ -10,6 +10,7 @@
 
 class GLFWwindow;
 class SPHParticle;
+class Solver;
 
 class GUI {
  public:

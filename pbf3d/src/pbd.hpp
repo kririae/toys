@@ -7,27 +7,29 @@
 
 #include "compact_hash.hpp"
 #include "gui.hpp"
+#include "solver.hpp"
 #include <memory>
 #include <vector>
 
 class SPHParticle;
 
-class PBDSolver {
+class PBDSolver : public Solver {
  public:
   explicit PBDSolver(float _radius);
   PBDSolver(const PBDSolver &solver) = delete;
   PBDSolver &operator=(const PBDSolver &solver) = delete;
-  ~PBDSolver() = default;
+  ~PBDSolver() override = default;
 
-  void callback();  // gui_ptr required
-  void add_particle(SPHParticle &&p);
+  void set_gui(RTGUI_particles *gui);
+  void callback() override;  // gui_ptr required
+  void add_particle(const SPHParticle &p);
   static float poly6(float r, float d);
   std::vector<SPHParticle> &get_data();
 
  private:
   std::shared_ptr<CompactHash> ch_ptr;
-  std::shared_ptr<GUI> gui_ptr{nullptr};
-  float radius{0.03};
+  RTGUI_particles *gui_ptr{nullptr};
+  float radius{0.03}, delta_t{0.01};
 };
 
 #endif  // PBF3D_SRC_PBD_HPP_
