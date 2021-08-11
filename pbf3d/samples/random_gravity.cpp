@@ -8,24 +8,30 @@
 #include <iostream>
 #include <random>
 
-constexpr int NParticles = 1000;
+constexpr int NParticles = 800;
 constexpr int WIDTH = 800, HEIGHT = 600;
+constexpr float radius = 0.03;
 
+Random rd_global;
 int main()
 {
   // random generator initialization
-  std::random_device rd;
-  std::mt19937 mt(rd());
-  std::uniform_real_distribution<float> dist(-1.0, 1.0);
 
   RTGUI_particles gui(WIDTH, HEIGHT);
-  PBDSolver pbd(0.03);
+  PBDSolver pbd(radius);
   pbd.set_gui(&gui);
   std::function<void()> callback = [obj = &pbd] { obj->callback(); };
 
-  for (int i = 0; i < NParticles; ++i) {
-    pbd.add_particle(SPHParticle(dist(mt), dist(mt), dist(mt)));
+  int cnt = 0;
+  // for (float x = -0.5; x <= 0.5; x += 2 * radius) {
+  for (float y = -0.5; y <= 0.5; y += 2 * radius) {
+    for (float z = -0.5; z <= 0.5; z += 2 * radius) {
+      ++cnt;
+      pbd.add_particle(SPHParticle(0, y, z));
+    }
   }
+  // }
+  std::cout << "NParticles: " << cnt << std::endl;
 
   gui.main_loop(callback);
   gui.del();

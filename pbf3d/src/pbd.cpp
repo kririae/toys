@@ -3,11 +3,17 @@
 //
 
 #include "pbd.hpp"
+#include <cstdio>
 #include <iostream>
+
+// static void print(glm::vec3 v) {
+//   std::cout << v.x << " " << v.y << " " << v.z << std::endl;
+// }
 
 PBDSolver::PBDSolver(float _radius)
     : ch_ptr(std::make_shared<CompactHash>(_radius)), radius(_radius)
 {
+  mass = 4.0f / 3.0f * glm::pi<float>() * glm::pow(radius, 3.0f);
 }
 
 void PBDSolver::set_gui(RTGUI_particles *gui)
@@ -18,23 +24,69 @@ void PBDSolver::set_gui(RTGUI_particles *gui)
 void PBDSolver::callback()
 {
   assert(gui_ptr != nullptr);
-  const glm::vec3 g(0.0f, -9.8f, 0.0f);
-  for (auto &i : ch_ptr->get_data()) {
+  const glm::vec3 g(0.0f, 0.0f, 0.0f);
+
+  float rho_0 = 1.0f;
+  auto &data = get_data();
+  const auto pre_data = data;  // copy
+
+  // Apply forces
+  for (auto &i : get_data()) {
     i.v += delta_t * g;
     i.pos += delta_t * i.v;
-
-    constraint_to_border(i);
   }
 
+  // find all neighbors
   ch_ptr->build();
-  auto &data = ch_ptr->get_data();
-  for (uint i = 0; i < ch_ptr->n_points(); ++i) {
-    auto &_p = data[i];
-    _p.rho = glm::abs(_p.v.y) / 5.0;
-    // for (int j = ch_ptr->n_neighbor(i) - 1; j >= 0; --j) {
-    //   _p.rho += PBDSolver::poly6(_p.dist(data[j]), radius);
-    // }
-    // std::cout << _p.rho << std::endl;
+
+  // Jacobi iteration
+
+  int iter = 8;
+  while (iter--) {
+    std::vector<float> _lambda, _constraint;
+    _lambda.reserve(data.size());
+    _constraint.reserve(data.size());
+    double constraint_sum = 0;
+
+    for (uint i = 0; i < data.size(); ++i) {
+      _constraint[i] = sph_calc_rho(i) / rho_0 - 1;
+      constraint_sum += _constraint[i];
+      float denom = 100.0f;
+      for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
+        const int neighbor_index = ch_ptr->neighbor(i, j);
+        denom += glm::pow(glm::length(grad_c(i, neighbor_index, rho_0)), 2.0f);
+      }
+      _lambda[i] = -_constraint[i] / denom;
+      assert(!glm::isnan(_lambda[i]));
+      // std::printf(
+      //     "lambda: - %f / %f = %f\n", _constraint[i], denom, _lambda[i]);
+    }
+
+    for (uint i = 0; i < data.size(); ++i) {
+      glm::vec3 delta_p_i(0.0f);
+      for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
+        const int neighbor_index = ch_ptr->neighbor(i, j);
+        delta_p_i += (_lambda[i] + _lambda[neighbor_index] +
+                      compute_s_corr(i, neighbor_index)) *
+                     grad_spiky(data[i].pos - data[neighbor_index].pos, radius);
+      }
+
+      delta_p_i *= 1.0f / rho_0;
+      data[i].pos += delta_p_i;
+      data[i].rho = glm::abs(_constraint[i]);
+      constraint_to_border(data[i]);
+    }
+    std::cout << "averate constraint: " << constraint_sum / data.size()
+              << std::endl;
+  }
+
+  // update all velocity
+  for (uint i = 0; i < data.size(); ++i) {
+    auto &p = data[i];
+    assert(!glm::isnan(p.pos.x));
+    assert(!glm::isnan(p.pos.y));
+    assert(!glm::isnan(p.pos.z));
+    p.v = 1.0f / delta_t * (p.pos - pre_data[i].pos);
   }
 
   gui_ptr->set_particles(get_data());
@@ -48,23 +100,79 @@ void PBDSolver::add_particle(const SPHParticle &p)
 
 void PBDSolver::constraint_to_border(SPHParticle &p) const
 {
-  p.pos.x = glm::clamp(p.pos.x, -border, border);
-  p.v.x = glm::abs(p.pos.x) == border ? 0.0 : p.v.x;
+  // p.pos.x = glm::clamp(p.pos.x, -border, border);
+  p.pos.x = 0;
   p.pos.y = glm::clamp(p.pos.y, -border, border);
-  p.v.y = glm::abs(p.pos.y) == border ? 0.0 : p.v.y;
   p.pos.z = glm::clamp(p.pos.z, -border, border);
-  p.v.z = glm::abs(p.pos.z) == border ? 0.0 : p.v.z;
+  extern Random rd_global;
+  p.pos += 1e-3f *
+           glm::vec3(rd_global.rand(), rd_global.rand(), rd_global.rand());
+}
+
+float PBDSolver::sph_calc_rho(int p_i)
+{
+  float rho = 0;
+  const auto &data = get_data();
+  for (int i = 0; i < ch_ptr->n_neighbor(p_i); ++i) {
+    const int neighbor_index = ch_ptr->neighbor(p_i, i);
+    rho += mass *
+           poly6(glm::length(data[p_i].pos - data[neighbor_index].pos), radius);
+  }
+
+  assert(!glm::isnan(rho));
+  return rho;
+}
+
+glm::vec3 PBDSolver::grad_c(int p_i, int p_k, float rho_0)
+{
+  // Assume CH is built
+  const auto &data = get_data();
+  glm::vec3 res(0.0f);
+  if (p_i == p_k) {
+    for (int i = 0; i < ch_ptr->n_neighbor(p_i); ++i) {
+      const int neighbor_index = ch_ptr->neighbor(p_i, i);
+      res += grad_spiky(data[p_i].pos - data[neighbor_index].pos, radius);
+    }
+  }
+  else {
+    res = -grad_spiky(data[p_i].pos - data[p_k].pos, radius);
+  }
+
+  assert(!glm::isnan(res.x));
+  assert(!glm::isnan(res.y));
+  assert(!glm::isnan(res.z));
+  return 1.0f / rho_0 * res;
 }
 
 float PBDSolver::poly6(float r, float d)
 {
-  if (0.0f <= r && r <= d) {
-    return 315.0f / (64 * glm::pi<float>() * glm::pow(d, 9.0f)) *
-           glm::pow(d * d - r * r, 3.0f);
-  }
-  else {
-    return 0.0f;
-  }
+  float res = 0;
+  r = glm::abs(r);
+  if (0 <= r && r <= d)
+    res = 315.0f / (64 * glm::pi<float>() * glm::pow(d, 9.0f)) *
+          glm::pow(d * d - r * r, 3.0f);
+  return res;
+}
+
+glm::vec3 PBDSolver::grad_spiky(glm::vec3 v, float d)
+{
+  float len = glm::length(v);
+  glm::vec3 res(0.0f);
+  if (0 < len && len <= d)
+    res = static_cast<float>(-45 / (glm::pi<float>() * glm::pow(d, 6)) *
+                             glm::pow(d - len, 2)) *
+          glm::normalize(v);
+  return res;
+}
+
+float PBDSolver::compute_s_corr(int p_i, int p_j)
+{
+  float k = 0.1f;  // k
+  float n = 4.0f;
+  float delta_q = 0.3f * radius;
+  const auto &data = get_data();
+  float r = glm::length(data[p_i].pos - data[p_j].pos);
+  return -k * glm::pow(poly6(r, radius) / poly6(delta_q, radius), n);
 }
 
 std::vector<SPHParticle> &PBDSolver::get_data()

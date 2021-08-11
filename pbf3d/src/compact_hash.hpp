@@ -19,12 +19,13 @@ class CompactHash {
   void build();
   void add_particle(const SPHParticle &p);
   std::vector<SPHParticle> &get_data();
-  uint n_points() const;
-  uint n_neighbor(uint index) const;
-  uint neighbor(uint index, uint neighbor_index) const;
+  int n_points() const;
+  int n_neighbor(uint index) const;
+  int neighbor(uint index, uint neighbor_index) const;
 
  private:
   float radius;
   std::vector<SPHParticle> data{};
+  std::vector<std::vector<uint>> neighbor_map{};
 };
 #endif  // PBF3D_SRC_COMPACT_HASH_HPP_

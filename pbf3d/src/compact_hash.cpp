@@ -19,36 +19,31 @@ std::vector<SPHParticle> &CompactHash::get_data()
   return data;
 }
 
-uint CompactHash::n_points() const
+int CompactHash::n_points() const
 {
   return data.size();
 }
 
-uint CompactHash::n_neighbor(uint index) const
+int CompactHash::n_neighbor(uint index) const
 {
-  const auto &center = data[index];
-  return std::count_if(data.cbegin(), data.cend(), [&](const auto &i) {
-    return center.dist(i) <= radius;
-  });
+  return neighbor_map[index].size();
 }
 
-uint CompactHash::neighbor(uint index, uint neighbor_index) const
+int CompactHash::neighbor(uint index, uint neighbor_index) const
 {
-  const auto &center = data[index];
-  for (uint i = 0; i < n_points(); ++i) {
-    if (center.dist(data[i]) <= radius) {
-      if (neighbor_index == 0)
-        return i;
-      else
-        --neighbor_index;
-    }
-  }
-
-  // should not reach here
-  assert(false);
+  return neighbor_map[index][neighbor_index];
 }
 
 void CompactHash::build()
 {
-  // data.clear();
+  neighbor_map = std::vector<std::vector<uint>>(n_points());
+  for (int i = 0; i < n_points(); ++i) {
+    const auto &center = data[i];
+    auto &neighbor_map_i = neighbor_map[i];
+    for (int j = 0; j < n_points(); ++j) {
+      if (center.dist(data[j]) <= radius) {
+        neighbor_map_i.push_back(j);
+      }
+    }
+  }
 }

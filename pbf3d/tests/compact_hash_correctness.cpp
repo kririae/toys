@@ -12,7 +12,7 @@ static glm::vec3 gen_particle(glm::vec3 center, float radius)
   return glm::vec3(radius, 0.0f, 0.0f) + center;
 }
 
-TEST(COMPACT_HASH_CORRECTNESS, n_points)
+TEST(COMPACT_HASH, n_points)
 {
   float radius = 0.03f;
   std::random_device rd;
@@ -29,6 +29,7 @@ TEST(COMPACT_HASH_CORRECTNESS, n_points)
     ch.add_particle(gen_particle(center, radius));
   }
 
+  ch.build();
   EXPECT_EQ(ch.n_points(), n_neighbor + 1);
   EXPECT_EQ(ch.n_neighbor(0), n_neighbor + 1);
 }

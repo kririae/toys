@@ -10,3 +10,4 @@ macro(add_test_exe test_name)
 endmacro(add_test_exe)
 
 add_test_exe(compact_hash_correctness)
+add_test_exe(pbd_solver_correctness)

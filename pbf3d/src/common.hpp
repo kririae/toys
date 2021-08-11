@@ -12,9 +12,21 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <random>
 
 using color = glm::vec3;
 
 glm::vec3 color_ramp(float t, const color &col_left, const color &col_right);
+
+class Random {
+ public:
+  Random();
+  float rand();
+
+ private:
+  std::random_device rd{};
+  std::mt19937 mt;
+  std::uniform_real_distribution<float> dist;
+};
 
 #endif  // PBF3D_SRC_COMMON_HPP_
