@@ -8,7 +8,7 @@
 #include <iostream>
 #include <random>
 
-constexpr int NParticles = 6000;
+constexpr int NParticles = 1000;
 constexpr int WIDTH = 800, HEIGHT = 600;
 
 int main()

@@ -23,13 +23,14 @@ class PBDSolver : public Solver {
   void set_gui(RTGUI_particles *gui);
   void callback() override;  // gui_ptr required
   void add_particle(const SPHParticle &p);
+  void constraint_to_border(SPHParticle &p) const;
   static float poly6(float r, float d);
   std::vector<SPHParticle> &get_data();
 
  private:
   std::shared_ptr<CompactHash> ch_ptr;
   RTGUI_particles *gui_ptr{nullptr};
-  float radius{0.03}, delta_t{0.01};
+  float radius{0.3}, delta_t{1.0 / 60.0 / 2.0}, border{1.0};
 };
 
 #endif  // PBF3D_SRC_PBD_HPP_
