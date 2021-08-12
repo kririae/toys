@@ -32,9 +32,9 @@ class PBDSolver : public Solver {
   static float poly6(float r, float d);
   static glm::vec3 grad_spiky(glm::vec3 v, float d);
   float compute_s_corr(int p_i, int p_j);
+  std::shared_ptr<CompactHash> ch_ptr;
 
  private:
-  std::shared_ptr<CompactHash> ch_ptr;
   RTGUI_particles *gui_ptr{nullptr};
   float radius, mass{0}, delta_t{1.0 / 60 / 2.0}, border{1.0};
 };

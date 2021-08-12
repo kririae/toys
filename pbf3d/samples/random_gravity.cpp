@@ -8,7 +8,7 @@
 #include <iostream>
 #include <random>
 
-constexpr int NParticles = 800;
+constexpr int NParticles = 10000;
 constexpr int WIDTH = 800, HEIGHT = 600;
 constexpr float radius = 0.03;
 
@@ -22,16 +22,23 @@ int main()
   pbd.set_gui(&gui);
   std::function<void()> callback = [obj = &pbd] { obj->callback(); };
 
-  int cnt = 0;
-  // for (float x = -0.5; x <= 0.5; x += 2 * radius) {
-  for (float y = -0.5; y <= 0.5; y += 2 * radius * 0.3) {
-    for (float z = -0.5; z <= 0.5; z += 2 * radius * 0.3) {
-      ++cnt;
-      pbd.add_particle(SPHParticle(0, y, z));
-    }
+  for (int i = 0; i < NParticles; ++i) {
+    pbd.add_particle(SPHParticle(rd_global.rand() * 0.7,
+                                 rd_global.rand() * 0.7,
+                                 rd_global.rand() * 0.7));
   }
+
+  std::cout << "NParticles: " << NParticles << std::endl;
+  // int cnt = 0;
+  // for (float x = -0.5; x <= 0.5; x += radius) {
+  //   for (float y = -0.5; y <= 0.5; y += radius) {
+  //     for (float z = -0.5; z <= 0.5; z += radius) {
+  //       ++cnt;
+  //       pbd.add_particle(SPHParticle(x, y, z));
+  //     }
+  //   }
   // }
-  std::cout << "NParticles: " << cnt << std::endl;
+  // std::cout << "NParticles: " << cnt << std::endl;
 
   gui.main_loop(callback);
   gui.del();

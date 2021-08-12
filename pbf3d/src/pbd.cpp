@@ -24,9 +24,9 @@ void PBDSolver::set_gui(RTGUI_particles *gui)
 void PBDSolver::callback()
 {
   assert(gui_ptr != nullptr);
-  const glm::vec3 g(0.0f, 0.0f, 0.0f);
+  const glm::vec3 g(0.0f, -9.8f, 0.0f);
 
-  float rho_0 = 1.0f;
+  float rho_0 = 6.0f;
   auto &data = get_data();
   const auto pre_data = data;  // copy
 
@@ -41,20 +41,21 @@ void PBDSolver::callback()
 
   // Jacobi iteration
 
-  int iter = 8;
+  double c_i_sum = 0;
+  long long n_neightbor_sum = 0;
+
+  int iter = 5;
   while (iter--) {
     std::vector<float> _lambda, c_i;
     _lambda.reserve(data.size());
     c_i.reserve(data.size());
-    double c_i_sum = 0;
-    int n_neightbor_sum = 0;
 
     for (uint i = 0; i < data.size(); ++i) {
       c_i[i] = glm::max(sph_calc_rho(i) / rho_0 - 1, 0.0f);
       c_i_sum += c_i[i];
       n_neightbor_sum += ch_ptr->n_neighbor(i);
 
-      float denom = 100.0f;
+      float denom = 1.0f;
       for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
         const int neighbor_index = ch_ptr->neighbor(i, j);
         denom += glm::pow(glm::length(grad_c(i, neighbor_index, rho_0)), 2.0f);
@@ -79,13 +80,15 @@ void PBDSolver::callback()
       data[i].rho = glm::abs(c_i[i]);
       constraint_to_border(data[i]);
     }
-    std::cout << "avg constraint: " << c_i_sum / data.size() << " n_neighbor: "
-              << static_cast<float>(n_neightbor_sum) / data.size() << std::endl;
   }
 
+  std::cout << "avg c_i: " << c_i_sum / data.size() / 5 << " n_neighbor: "
+            << static_cast<float>(n_neightbor_sum) / data.size() / 5
+            << std::endl;
   // update all velocity
   for (uint i = 0; i < data.size(); ++i) {
     auto &p = data[i];
+
     assert(!glm::isnan(p.pos.x));
     assert(!glm::isnan(p.pos.y));
     assert(!glm::isnan(p.pos.z));
@@ -103,12 +106,12 @@ void PBDSolver::add_particle(const SPHParticle &p)
 
 void PBDSolver::constraint_to_border(SPHParticle &p) const
 {
-  // p.pos.x = glm::clamp(p.pos.x, -border, border);
-  p.pos.x = 0;
+  // p.pos.x = 0;
+  p.pos.x = glm::clamp(p.pos.x, -border, border);
   p.pos.y = glm::clamp(p.pos.y, -border, border);
   p.pos.z = glm::clamp(p.pos.z, -border, border);
   extern Random rd_global;
-  p.pos += 1e-3f *
+  p.pos += 1e-5f *
            glm::vec3(rd_global.rand(), rd_global.rand(), rd_global.rand());
 }
 

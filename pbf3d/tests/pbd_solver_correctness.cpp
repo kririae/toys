@@ -12,6 +12,8 @@ static void print(glm::vec3 v)
   std::cout << v.x << " " << v.y << " " << v.z << std::endl;
 }
 
+Random rd_global;
+
 TEST(PBD_SOLVER, grad_c)
 {
   PBDSolver pbd(1.2f);
