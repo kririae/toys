@@ -24,8 +24,8 @@ int main()
 
   int cnt = 0;
   // for (float x = -0.5; x <= 0.5; x += 2 * radius) {
-  for (float y = -0.5; y <= 0.5; y += 2 * radius) {
-    for (float z = -0.5; z <= 0.5; z += 2 * radius) {
+  for (float y = -0.5; y <= 0.5; y += 2 * radius * 0.3) {
+    for (float z = -0.5; z <= 0.5; z += 2 * radius * 0.3) {
       ++cnt;
       pbd.add_particle(SPHParticle(0, y, z));
     }

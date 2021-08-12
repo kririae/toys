@@ -43,23 +43,26 @@ void PBDSolver::callback()
 
   int iter = 8;
   while (iter--) {
-    std::vector<float> _lambda, _constraint;
+    std::vector<float> _lambda, c_i;
     _lambda.reserve(data.size());
-    _constraint.reserve(data.size());
-    double constraint_sum = 0;
+    c_i.reserve(data.size());
+    double c_i_sum = 0;
+    int n_neightbor_sum = 0;
 
     for (uint i = 0; i < data.size(); ++i) {
-      _constraint[i] = sph_calc_rho(i) / rho_0 - 1;
-      constraint_sum += _constraint[i];
+      c_i[i] = glm::max(sph_calc_rho(i) / rho_0 - 1, 0.0f);
+      c_i_sum += c_i[i];
+      n_neightbor_sum += ch_ptr->n_neighbor(i);
+
       float denom = 100.0f;
       for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
         const int neighbor_index = ch_ptr->neighbor(i, j);
         denom += glm::pow(glm::length(grad_c(i, neighbor_index, rho_0)), 2.0f);
       }
-      _lambda[i] = -_constraint[i] / denom;
+      _lambda[i] = -c_i[i] / denom;
       assert(!glm::isnan(_lambda[i]));
       // std::printf(
-      //     "lambda: - %f / %f = %f\n", _constraint[i], denom, _lambda[i]);
+      //     "lambda: - %f / %f = %f\n", c_i[i], denom, _lambda[i]);
     }
 
     for (uint i = 0; i < data.size(); ++i) {
@@ -73,11 +76,11 @@ void PBDSolver::callback()
 
       delta_p_i *= 1.0f / rho_0;
       data[i].pos += delta_p_i;
-      data[i].rho = glm::abs(_constraint[i]);
+      data[i].rho = glm::abs(c_i[i]);
       constraint_to_border(data[i]);
     }
-    std::cout << "averate constraint: " << constraint_sum / data.size()
-              << std::endl;
+    std::cout << "avg constraint: " << c_i_sum / data.size() << " n_neighbor: "
+              << static_cast<float>(n_neightbor_sum) / data.size() << std::endl;
   }
 
   // update all velocity
