@@ -14,6 +14,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <random>
 
+#define NDEBUG
+
+constexpr float border = 10.0f;
+constexpr bool rotate = false;
+
 using color = glm::vec3;
 
 glm::vec3 color_ramp(float t, const color &col_left, const color &col_right);

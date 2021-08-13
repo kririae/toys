@@ -4,7 +4,6 @@
 
 #include "compact_hash.hpp"
 #include "common.hpp"
-#include "omp.h"
 #include <chrono>
 #include <iostream>
 
@@ -40,78 +39,44 @@ int CompactHash::neighbor(uint index, uint neighbor_index) const
 void CompactHash::build()
 {
   neighbor_map = std::vector<std::vector<uint>>(n_points());
-  std::cout << "constructing hash map" << std::endl;
+  const int n_grids = glm::ceil(border * 2 / radius) + 1;
+  const int data_size = data.size();
   auto start = std::chrono::system_clock::now();
 
   for (auto &i : hash_map)
     i.clear();
 
-  for (uint i = 0; i < data.size(); ++i) {
-    const auto &p = data[i];
-    const int hash_map_index = hash(p.pos);
-    hash_map[hash_map_index].push_back(i);
-  }
-
-  const static glm::vec3 x(1.0f, 0.0f, 0.0f);
-  const static glm::vec3 y(0.0f, 1.0f, 0.0f);
-  const static glm::vec3 z(0.0f, 0.0f, 1.0f);
+  for (int i = 0; i < data_size; ++i)
+    hash_map[hash(data[i].pos)].push_back(i);
 
   int max_n_neighbor = 0;
-
-  for (uint i = 0; i < data.size(); ++i) {
+  for (int i = 0; i < data_size; ++i) {
     const auto &center = data[i];
+    const auto &grid_index = get_grid_index(center.pos);
 
-    auto update_neighbor_map = [&](glm::vec3 pos) {
-      // calculate pos (in grid coordinate)
-      const int _hash_map_index = hash(pos);
-      // if (pos.x < -border || pos.x > border || pos.y < -border ||
-      //     pos.y > border || pos.z < -border || pos.z > border)
-      //   return;
-      for (auto j : hash_map[_hash_map_index]) {
-        if (glm::length(center.pos - data[j].pos) <= radius) {
-          neighbor_map[i].push_back(j);
-          max_n_neighbor = glm::max(max_n_neighbor,
-                                    static_cast<int>(neighbor_map[i].size()));
+    for (int u = grid_index.x - 1; u <= grid_index.x + 1; ++u)
+      for (int v = grid_index.y - 1; v <= grid_index.y + 1; ++v)
+        for (int w = grid_index.z - 1; w <= grid_index.z + 1; ++w) {
+          if (u < 0 || v < 0 || w < 0 || u > n_grids || v > n_grids ||
+              w > n_grids)  // TODO: implement AABB
+            continue;
+
+          const int _hash_index = hash_from_grid(u, v, w);
+          for (auto &j : hash_map[_hash_index]) {
+            if (center.dist(data[j]) <= radius) {
+              neighbor_map[i].push_back(j);
+              max_n_neighbor = glm::max(static_cast<ulong>(max_n_neighbor),
+                                        neighbor_map[i].size());
+            }
+          }
         }
-      }
-    };
+  }
 
-    update_neighbor_map(center.pos);
-
-    // 6
-    update_neighbor_map(center.pos + x * radius);
-    update_neighbor_map(center.pos - x * radius);
-    update_neighbor_map(center.pos + y * radius);
-    update_neighbor_map(center.pos - y * radius);
-    update_neighbor_map(center.pos + z * radius);
-    update_neighbor_map(center.pos - z * radius);
-    update_neighbor_map(center.pos - z * radius);
-
-    // 12
-    update_neighbor_map(center.pos + (x + y) * radius);
-    update_neighbor_map(center.pos - (x + y) * radius);
-    update_neighbor_map(center.pos + (x + z) * radius);
-    update_neighbor_map(center.pos - (x + z) * radius);
-    update_neighbor_map(center.pos + (y + z) * radius);
-    update_neighbor_map(center.pos - (y + z) * radius);
-    update_neighbor_map(center.pos + (x - y) * radius);
-    update_neighbor_map(center.pos - (x - y) * radius);
-    update_neighbor_map(center.pos + (x - z) * radius);
-    update_neighbor_map(center.pos - (x - z) * radius);
-    update_neighbor_map(center.pos + (y - z) * radius);
-    update_neighbor_map(center.pos - (y - z) * radius);
-
-    // 8
-    update_neighbor_map(center.pos + (x + y + z) * radius);
-    update_neighbor_map(center.pos + (x + y - z) * radius);
-    update_neighbor_map(center.pos + (x - y + z) * radius);
-    update_neighbor_map(center.pos + (x - y - z) * radius);
-    update_neighbor_map(center.pos - (x + y + z) * radius);
-    update_neighbor_map(center.pos - (x + y - z) * radius);
-    update_neighbor_map(center.pos - (x - y + z) * radius);
-    update_neighbor_map(center.pos - (x - y - z) * radius);
-
-    // 27
+  for (auto &i : neighbor_map) {
+    // To avoid hash conflict
+    std::sort(i.begin(), i.end());
+    auto end_unique = std::unique(i.begin(), i.end());
+    i.erase(end_unique, i.end());
   }
 
   auto end = std::chrono::system_clock::now();
@@ -121,17 +86,43 @@ void CompactHash::build()
             << std::endl;
 }
 
-int CompactHash::hash(float x, float y, float z)
+int CompactHash::hash(float x, float y, float z) const
 {
   static long long p1 = 73856093, p2 = 19349663, p3 = 83492791;
-  const int res = (static_cast<long long>(glm::floor(x / radius) * p1) ^
-                   static_cast<long long>(glm::floor(y / radius) * p2) ^
-                   static_cast<long long>(glm::floor(z / radius) * p3)) %
-                  MOD;
-  return (res + MOD) % MOD;
+  const auto &grid_index = get_grid_index(glm::vec3(x, y, z));
+  const long long res = (static_cast<long long>(grid_index.x) * p1 ^
+                         static_cast<long long>(grid_index.y) * p2 ^
+                         static_cast<long long>(grid_index.z) * p3) %
+                        MOD;
+  return (res + MOD) % MOD;  // correct to positive
 }
 
-int CompactHash::hash(glm::vec3 p)
+int CompactHash::hash(const glm::vec3 &p)
 {
   return hash(p.x, p.y, p.z);
+}
+
+glm::ivec3 CompactHash::get_grid_index(const glm::vec3 &p) const
+{
+  int u = static_cast<int>(glm::floor((p.x + border + 1e-4) / radius));
+  int v = static_cast<int>(glm::floor((p.y + border + 1e-4) / radius));
+  int w = static_cast<int>(glm::floor((p.z + border + 1e-4) / radius));
+  return {u, v, w};
+}
+
+int CompactHash::hash_from_grid(int u, int v, int w)
+{
+  static long long p1 = 73856093, p2 = 19349663, p3 = 83492791;
+  const auto &grid_index = glm::ivec3(u, v, w);
+  // assert(u >= 0 && v >= 0 && w >= 0);
+  const long long res = (static_cast<long long>(grid_index.x) * p1 ^
+                         static_cast<long long>(grid_index.y) * p2 ^
+                         static_cast<long long>(grid_index.z) * p3) %
+                        MOD;
+  return (res + MOD) % MOD;  // correct to positive
+}
+
+int CompactHash::hash_from_grid(const glm::ivec3 &p)
+{
+  return hash_from_grid(p.x, p.y, p.z);
 }

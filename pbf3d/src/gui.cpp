@@ -123,12 +123,13 @@ void RTGUI_particles::main_loop(const std::function<void()> &callback)
 void RTGUI_particles::render_particles() const
 {
   static float rotate_y = 0;
-  rotate_y += 0.005;
+  if (rotate)
+    rotate_y += 0.005;
   if (rotate_y > 360.0f)
     rotate_y = 0;
 
   auto model = glm::translate(glm::mat4(1.0f), glm::vec3(0));
-  model = glm::scale(model, glm::vec3(1.0f));
+  model = glm::scale(model, glm::vec3(1 / border));
   model = glm::rotate(model, rotate_y, glm::vec3(0.0f, 1.0f, 0.0f));
 
   auto camera_pos = glm::vec3(1.0f, 3.0f, 6.0f);

@@ -15,8 +15,7 @@ Particle::Particle(float x, float y, float z) : pos(x, y, z)
 
 float Particle::dist(const Particle &p) const
 {
-  return glm::sqrt(glm::pow(pos.x - p.pos.x, 2) + glm::pow(pos.y - p.pos.y, 2) +
-                   glm::pow(pos.z - p.pos.z, 2));
+  return glm::length(pos - p.pos);
 }
 
 SPHParticle::SPHParticle(glm::vec3 _pos) : Particle::Particle(_pos)

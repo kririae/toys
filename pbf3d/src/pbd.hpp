@@ -23,12 +23,12 @@ class PBDSolver : public Solver {
   void set_gui(RTGUI_particles *gui);
   void callback() override;  // gui_ptr required
   void add_particle(const SPHParticle &p);
-  void constraint_to_border(SPHParticle &p) const;
+  static void constraint_to_border(SPHParticle &p);
   std::vector<SPHParticle> &get_data();
 
   // PBF mathematics parts...
   float sph_calc_rho(int p_i);
-  glm::vec3 grad_c(int p_i, int p_k, float rho_0);
+  glm::vec3 grad_c(int p_i, int p_k);
   static float poly6(float r, float d);
   static glm::vec3 grad_spiky(glm::vec3 v, float d);
   float compute_s_corr(int p_i, int p_j);
@@ -36,7 +36,7 @@ class PBDSolver : public Solver {
 
  private:
   RTGUI_particles *gui_ptr{nullptr};
-  float radius, mass{0}, delta_t{1.0 / 60 / 2.0}, border{1.0};
+  float radius, mass{0}, delta_t{0.004};
 };
 
 #endif  // PBF3D_SRC_PBD_HPP_

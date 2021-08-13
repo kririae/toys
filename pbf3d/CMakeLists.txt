@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 enable_testing()
 
 # options
-set(USE_COMPACT_N_SEARCH ON)
+set(USE_COMPACT_N_SEARCH OFF)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)

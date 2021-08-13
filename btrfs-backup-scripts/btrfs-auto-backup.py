@@ -141,8 +141,8 @@ class Subvol:
 
 
 # Path, suffix name, snapshot interval, send snapshot interval
-BACKUP_LIST = [Subvol(Path('/'), 'root', 2, 3),
-               Subvol(Path('/home'), 'home', 1, 2)]
+BACKUP_LIST = [Subvol(Path('/'), 'root', 2, 5),
+               Subvol(Path('/home'), 'home', 1, 3)]
 
 
 def scheduler():
