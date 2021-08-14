@@ -46,6 +46,7 @@ void CompactHash::build()
   for (auto &i : hash_map)
     i.clear();
 
+  // initialize the hash_map
   for (int i = 0; i < data_size; ++i)
     hash_map[hash(data[i].pos)].push_back(i);
 
@@ -125,4 +126,10 @@ int CompactHash::hash_from_grid(int u, int v, int w)
 int CompactHash::hash_from_grid(const glm::ivec3 &p)
 {
   return hash_from_grid(p.x, p.y, p.z);
+}
+
+std::vector<uint> &CompactHash::neighbor_vec(uint index)
+{
+  // the result should not be changed
+  return neighbor_map[index];
 }

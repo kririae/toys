@@ -17,7 +17,8 @@
 #define NDEBUG
 
 constexpr float border = 10.0f;
-constexpr bool rotate = false;
+constexpr bool rotate = true;
+// other pbf parameters are defined in pbd.cpp
 
 using color = glm::vec3;
 

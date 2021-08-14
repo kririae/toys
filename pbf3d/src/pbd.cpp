@@ -12,12 +12,13 @@
 // }
 
 constexpr float rho_0 = 10.0f;
-constexpr int iter = 3;
+constexpr float epsilon = 200.0f;
+constexpr int iter = 5;
 
 PBDSolver::PBDSolver(float _radius)
     : ch_ptr(std::make_shared<CompactHash>(_radius)), radius(_radius)
 {
-  mass = 4.0f / 3.0f * glm::pi<float>() * glm::pow(radius, 3.0f);
+  mass = 1.0f;
 }
 
 void PBDSolver::set_gui(RTGUI_particles *gui)
@@ -43,7 +44,6 @@ void PBDSolver::callback()
   ch_ptr->build();
 
   // Jacobi iteration
-
   double c_i_sum = 0;
   long long n_neightbor_sum = 0;
 
@@ -58,15 +58,12 @@ void PBDSolver::callback()
       c_i_sum += c_i[i];
       n_neightbor_sum += ch_ptr->n_neighbor(i);
 
-      float denom = 20.0f;
+      float _denom = 0.0f;
       for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
         const int neighbor_index = ch_ptr->neighbor(i, j);
-        denom += glm::pow(glm::length(grad_c(i, neighbor_index)), 2.0f);
+        _denom += glm::pow(glm::length(grad_c(i, neighbor_index)), 2.0f);
       }
-      _lambda[i] = -c_i[i] / denom;
-      assert(!glm::isnan(_lambda[i]));
-      // std::printf(
-      //     "lambda: - %f / %f = %f\n", c_i[i], denom, _lambda[i]);
+      _lambda[i] = -c_i[i] / (_denom + epsilon);
     }
 
     for (uint i = 0; i < data.size(); ++i) {
@@ -81,6 +78,7 @@ void PBDSolver::callback()
       delta_p_i *= 1.0f / rho_0;
       data[i].pos += delta_p_i;
       data[i].rho = glm::clamp(c_i[i], 0.0f, 1.0f);
+
       constraint_to_border(data[i]);
     }
   }
@@ -148,8 +146,8 @@ float PBDSolver::poly6(float r, float d)
   float res = 0;
   r = glm::abs(r);
   if (0 <= r && r <= d)
-    res = 315.0f / (64 * glm::pi<float>() * glm::pow(d, 9.0f)) *
-          glm::pow(d * d - r * r, 3.0f);
+    res = 315.0f / (64 * glm::pi<float>()) *
+          glm::pow((d * d - r * r) / (d * d * d), 3.0f);
   return res;
 }
 

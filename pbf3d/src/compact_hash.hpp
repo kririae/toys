@@ -18,17 +18,14 @@ class CompactHash {
   CompactHash &operator=(const CompactHash &CH) = delete;
   ~CompactHash() = default;
 
+  // interface
   void build();
   void add_particle(const SPHParticle &p);
   std::vector<SPHParticle> &get_data();
-  [[nodiscard]] int hash(float x, float y, float z) const;
-  int hash(const glm::vec3 &p);
-  static int hash_from_grid(int u, int v, int w);
-  static int hash_from_grid(const glm::ivec3 &p);
-  [[nodiscard]] glm::ivec3 get_grid_index(const glm::vec3 &p) const;
-  int n_points() const;
-  int n_neighbor(uint index) const;
-  int neighbor(uint index, uint neighbor_index) const;
+  [[nodiscard]] int n_points() const;
+  [[nodiscard]] int n_neighbor(uint index) const;
+  [[nodiscard]] int neighbor(uint index, uint neighbor_index) const;
+  std::vector<uint> &neighbor_vec(uint index);
 
  private:
   float radius;
@@ -36,5 +33,12 @@ class CompactHash {
   std::vector<std::vector<uint>> neighbor_map{};
   std::vector<int> hash_map[MOD]{};
   const int MAX_NEIGHBOR_SIZE = 60;
+
+  // hash function
+  [[nodiscard]] int hash(float x, float y, float z) const;
+  int hash(const glm::vec3 &p);
+  static int hash_from_grid(int u, int v, int w);
+  static int hash_from_grid(const glm::ivec3 &p);
+  [[nodiscard]] glm::ivec3 get_grid_index(const glm::vec3 &p) const;
 };
 #endif  // PBF3D_SRC_COMPACT_HASH_HPP_

@@ -61,7 +61,7 @@ class Subvol:
     def __outdate_snapshots(self, dir: Path, inter: int, host: bool):
         if not dir.exists():
             logger.warning('dir do not exists: %s', dir)
-            return
+            return []
         ls = self.__snapshot_list(dir, host=host)
         ls.sort(key=ext_time)
         ls = filter(lambda x: datetime.now() - ext_time(x) >
