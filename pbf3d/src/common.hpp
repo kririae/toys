@@ -17,6 +17,7 @@
 #define NDEBUG
 
 constexpr float border = 10.0f;
+constexpr float epsilon = 1e-6;
 constexpr bool rotate = true;
 // other pbf parameters are defined in pbd.cpp
 

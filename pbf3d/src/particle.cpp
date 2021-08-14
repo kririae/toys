@@ -1,9 +1,9 @@
 //
 // Created by kr2 on 8/9/21.
 //
+
 #include "particle.hpp"
 #include "common.hpp"
-#include <memory>
 
 Particle::Particle(glm::vec3 _pos) : pos(_pos)
 {

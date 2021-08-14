@@ -4,6 +4,7 @@
 
 #include "compact_hash.hpp"
 #include "common.hpp"
+#include "omp.h"
 #include <chrono>
 #include <iostream>
 
@@ -47,6 +48,7 @@ void CompactHash::build()
     i.clear();
 
   // initialize the hash_map
+  // #pragma omp parallel for default(none) shared(data_size)
   for (int i = 0; i < data_size; ++i)
     hash_map[hash(data[i].pos)].push_back(i);
 
@@ -91,9 +93,9 @@ int CompactHash::hash(float x, float y, float z) const
 {
   static long long p1 = 73856093, p2 = 19349663, p3 = 83492791;
   const auto &grid_index = get_grid_index(glm::vec3(x, y, z));
-  const long long res = (static_cast<long long>(grid_index.x) * p1 ^
-                         static_cast<long long>(grid_index.y) * p2 ^
-                         static_cast<long long>(grid_index.z) * p3) %
+  const long long res = ((long long)(grid_index.x) * p1 ^
+                         (long long)(grid_index.y) * p2 ^
+                         (long long)(grid_index.z) * p3) %
                         MOD;
   return (res + MOD) % MOD;  // correct to positive
 }
@@ -105,9 +107,10 @@ int CompactHash::hash(const glm::vec3 &p)
 
 glm::ivec3 CompactHash::get_grid_index(const glm::vec3 &p) const
 {
-  int u = static_cast<int>(glm::floor((p.x + border + 1e-4) / radius));
-  int v = static_cast<int>(glm::floor((p.y + border + 1e-4) / radius));
-  int w = static_cast<int>(glm::floor((p.z + border + 1e-4) / radius));
+  int u = (int)(glm::floor((p.x + border + 2e-4) / radius));
+  int v = (int)(glm::floor((p.y + border + 2e-4) / radius));
+  int w = (int)(glm::floor((p.z + border + 2e-4) / radius));
+
   return {u, v, w};
 }
 
@@ -115,10 +118,9 @@ int CompactHash::hash_from_grid(int u, int v, int w)
 {
   static long long p1 = 73856093, p2 = 19349663, p3 = 83492791;
   const auto &grid_index = glm::ivec3(u, v, w);
-  // assert(u >= 0 && v >= 0 && w >= 0);
-  const long long res = (static_cast<long long>(grid_index.x) * p1 ^
-                         static_cast<long long>(grid_index.y) * p2 ^
-                         static_cast<long long>(grid_index.z) * p3) %
+  const long long res = ((long long)(grid_index.x) * p1 ^
+                         (long long)(grid_index.y) * p2 ^
+                         (long long)(grid_index.z) * p3) %
                         MOD;
   return (res + MOD) % MOD;  // correct to positive
 }

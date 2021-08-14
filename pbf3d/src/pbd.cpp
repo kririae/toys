@@ -11,14 +11,15 @@
 //   std::cout << v.x << " " << v.y << " " << v.z << std::endl;
 // }
 
-constexpr float rho_0 = 10.0f;
-constexpr float epsilon = 200.0f;
-constexpr int iter = 5;
+constexpr float rho_0 = 5.0f;
+constexpr float denom_epsilon = 20.0f;
+constexpr int iter = 3;
 
 PBDSolver::PBDSolver(float _radius)
     : ch_ptr(std::make_shared<CompactHash>(_radius)), radius(_radius)
 {
-  mass = 1.0f;
+  mass = 2.0f;
+  // mass = 1.0f;
 }
 
 void PBDSolver::set_gui(RTGUI_particles *gui)
@@ -54,7 +55,8 @@ void PBDSolver::callback()
     c_i.reserve(data.size());
 
     for (uint i = 0; i < data.size(); ++i) {
-      c_i[i] = glm::max(sph_calc_rho(i) / rho_0 - 1, 0.0f);
+      const float rho = sph_calc_rho(i);
+      c_i[i] = glm::max(rho / rho_0 - 1, 0.0f);
       c_i_sum += c_i[i];
       n_neightbor_sum += ch_ptr->n_neighbor(i);
 
@@ -63,7 +65,8 @@ void PBDSolver::callback()
         const int neighbor_index = ch_ptr->neighbor(i, j);
         _denom += glm::pow(glm::length(grad_c(i, neighbor_index)), 2.0f);
       }
-      _lambda[i] = -c_i[i] / (_denom + epsilon);
+
+      _lambda[i] = -c_i[i] / (_denom + denom_epsilon);
     }
 
     for (uint i = 0; i < data.size(); ++i) {
@@ -77,7 +80,7 @@ void PBDSolver::callback()
 
       delta_p_i *= 1.0f / rho_0;
       data[i].pos += delta_p_i;
-      data[i].rho = glm::clamp(c_i[i], 0.0f, 1.0f);
+      data[i].rho = glm::clamp(c_i[i] * 10, 0.0f, 1.0f);
 
       constraint_to_border(data[i]);
     }
@@ -105,7 +108,7 @@ void PBDSolver::add_particle(const SPHParticle &p)
 void PBDSolver::constraint_to_border(SPHParticle &p)
 {
   extern Random rd_global;
-  p.pos += 1e-5f *
+  p.pos += epsilon *
            glm::vec3(rd_global.rand(), rd_global.rand(), rd_global.rand());
   p.pos.x = glm::clamp(p.pos.x, -border, border);
   p.pos.y = glm::clamp(p.pos.y, -border, border);

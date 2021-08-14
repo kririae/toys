@@ -31,11 +31,12 @@ int main()
   //
   // std::cout << "NParticles: " << NParticles << std::endl;
 
-  const int _range = border / 2.0f;
+  const int _range = border / 1.7f;
+  const float coeff = 0.8f;
   int cnt = 0;
-  for (float x = -_range; x <= _range; x += radius) {
-    for (float y = -_range; y <= _range; y += radius) {
-      for (float z = -_range; z <= _range; z += radius) {
+  for (float x = -_range; x <= _range; x += coeff * radius) {
+    for (float y = -_range; y <= _range; y += coeff * radius) {
+      for (float z = -_range; z <= _range; z += coeff * radius) {
         ++cnt;
         pbd.add_particle(SPHParticle(x, y, z));
       }
