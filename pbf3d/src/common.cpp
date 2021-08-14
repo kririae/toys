@@ -18,3 +18,5 @@ float Random::rand()
 {
   return dist(mt);
 }
+
+Random rd_global;

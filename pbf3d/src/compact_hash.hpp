@@ -6,9 +6,8 @@
 #define PBF3D_SRC_COMPACT_HASH_HPP_
 
 #include "particle.hpp"
-#include <map>
 
-static const int MOD{100007};
+static constexpr int MOD = 100007;
 
 class CompactHash {
   // Currently, a poor implementation (for correctness)

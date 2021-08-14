@@ -12,8 +12,6 @@ constexpr int NParticles = 2000;
 constexpr int WIDTH = 800, HEIGHT = 600;
 constexpr float radius = 1.0f;
 
-[[maybe_unused]] Random rd_global;
-
 int main()
 {
   // random generator initialization
@@ -31,7 +29,7 @@ int main()
   //
   // std::cout << "NParticles: " << NParticles << std::endl;
 
-  const int _range = border / 1.7f;
+  const int _range = border / 1.4f;
   const float coeff = 0.8f;
   int cnt = 0;
   for (float x = -_range; x <= _range; x += coeff * radius) {

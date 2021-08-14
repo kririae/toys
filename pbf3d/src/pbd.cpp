@@ -2,8 +2,8 @@
 // Created by kr2 on 8/10/21.
 //
 
-#pragma GCC optimize 3
 #include "pbd.hpp"
+#include <chrono>
 #include <cstdio>
 #include <iostream>
 
@@ -11,15 +11,14 @@
 //   std::cout << v.x << " " << v.y << " " << v.z << std::endl;
 // }
 
-constexpr float rho_0 = 5.0f;
+constexpr float rho_0 = 10.0f;
 constexpr float denom_epsilon = 20.0f;
 constexpr int iter = 3;
 
 PBDSolver::PBDSolver(float _radius)
     : ch_ptr(std::make_shared<CompactHash>(_radius)), radius(_radius)
 {
-  mass = 2.0f;
-  // mass = 1.0f;
+  mass = 4.0f / 3.0f * glm::pi<float>() * radius * radius;
 }
 
 void PBDSolver::set_gui(RTGUI_particles *gui)
@@ -29,16 +28,19 @@ void PBDSolver::set_gui(RTGUI_particles *gui)
 
 void PBDSolver::callback()
 {
+  auto start = std::chrono::system_clock::now();
   assert(gui_ptr != nullptr);
-  const glm::vec3 g(0.0f, -9.8f, 0.0f);
 
   auto &data = get_data();
   const auto pre_data = data;  // copy
+  const int data_size = data.size();
+  const glm::vec3 g(0.0f, -9.8f, 0.0f);
 
   // Apply forces
   for (auto &i : data) {
     i.v += delta_t * g;
     i.pos += delta_t * i.v;
+    constraint_to_border(i);
   }
 
   // find all neighbors
@@ -54,49 +56,56 @@ void PBDSolver::callback()
     _lambda.reserve(data.size());
     c_i.reserve(data.size());
 
-    for (uint i = 0; i < data.size(); ++i) {
+#pragma omp parallel for default(none) \
+    shared(data_size, c_i, c_i_sum, n_neightbor_sum, _lambda)
+    for (int i = 0; i < data_size; ++i) {
+      // Basic calculation
       const float rho = sph_calc_rho(i);
       c_i[i] = glm::max(rho / rho_0 - 1, 0.0f);
       c_i_sum += c_i[i];
       n_neightbor_sum += ch_ptr->n_neighbor(i);
 
       float _denom = 0.0f;
-      for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
-        const int neighbor_index = ch_ptr->neighbor(i, j);
-        _denom += glm::pow(glm::length(grad_c(i, neighbor_index)), 2.0f);
-      }
+      const auto &neighbor_vec = ch_ptr->neighbor_vec(i);
+      for (const auto &j : neighbor_vec)
+        _denom += glm::pow(glm::length(grad_c(i, j)), 2.0f);
 
       _lambda[i] = -c_i[i] / (_denom + denom_epsilon);
     }
 
-    for (uint i = 0; i < data.size(); ++i) {
+#pragma omp parallel for default(none) shared(data_size, _lambda, data, c_i)
+    for (int i = 0; i < data_size; ++i) {
       glm::vec3 delta_p_i(0.0f);
-      for (int j = 0; j < ch_ptr->n_neighbor(i); ++j) {
-        const int neighbor_index = ch_ptr->neighbor(i, j);
-        delta_p_i += (_lambda[i] + _lambda[neighbor_index] +
-                      compute_s_corr(i, neighbor_index)) *
-                     grad_spiky(data[i].pos - data[neighbor_index].pos, radius);
+      const auto &neighbor_vec = ch_ptr->neighbor_vec(i);
+      for (const auto &j : neighbor_vec) {
+        delta_p_i += (_lambda[i] + _lambda[j] + compute_s_corr(i, j)) *
+                     grad_spiky(data[i].pos - data[j].pos, radius);
       }
 
       delta_p_i *= 1.0f / rho_0;
       data[i].pos += delta_p_i;
-      data[i].rho = glm::clamp(c_i[i] * 10, 0.0f, 1.0f);
+      data[i].rho = glm::clamp(c_i[i], 0.0f, 1.0f);
 
       constraint_to_border(data[i]);
     }
   }
 
-  std::cout << "avg c_i: " << c_i_sum / data.size() / iter << " n_neighbor: "
-            << static_cast<float>(n_neightbor_sum) / data.size() / iter
+  std::cout << "avg c_i: " << c_i_sum / data_size / iter << " | n_neighbor: "
+            << static_cast<float>(n_neightbor_sum) / data_size / iter
             << std::endl;
 
   // update all velocity
-  for (uint i = 0; i < data.size(); ++i) {
+  for (int i = 0; i < data_size; ++i) {
     auto &p = data[i];
     p.v = 1.0f / delta_t * (p.pos - pre_data[i].pos);
   }
 
   gui_ptr->set_particles(get_data());
+
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<float> diff = end - start;
+  std::cout << "calculation complete: " << diff.count() * 1000 << "ms"
+            << std::endl;
 }
 
 void PBDSolver::add_particle(const SPHParticle &p)
@@ -146,12 +155,9 @@ glm::vec3 PBDSolver::grad_c(int p_i, int p_k)
 
 float PBDSolver::poly6(float r, float d)
 {
-  float res = 0;
-  r = glm::abs(r);
-  if (0 <= r && r <= d)
-    res = 315.0f / (64 * glm::pi<float>()) *
-          glm::pow((d * d - r * r) / (d * d * d), 3.0f);
-  return res;
+  r = glm::clamp(glm::abs(r), 0.0f, d);
+  const float t = (d * d - r * r) / (d * d * d);
+  return 315.0f / (64 * glm::pi<float>()) * t * t * t;
 }
 
 glm::vec3 PBDSolver::grad_spiky(glm::vec3 v, float d)

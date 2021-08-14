@@ -15,6 +15,8 @@ class SPHParticle;
 
 class PBDSolver : public Solver {
  public:
+  std::shared_ptr<CompactHash> ch_ptr;  // TODO: expose the interface temporary
+
   explicit PBDSolver(float _radius);
   PBDSolver(const PBDSolver &solver) = delete;
   PBDSolver &operator=(const PBDSolver &solver) = delete;
@@ -32,11 +34,10 @@ class PBDSolver : public Solver {
   static float poly6(float r, float d);
   static glm::vec3 grad_spiky(glm::vec3 v, float d);
   float compute_s_corr(int p_i, int p_j);
-  std::shared_ptr<CompactHash> ch_ptr;
 
  private:
   RTGUI_particles *gui_ptr{nullptr};
-  float radius, mass{0}, delta_t{0.004};
+  float radius, mass{0}, delta_t{1.0f / 60.0f};
 };
 
 #endif  // PBF3D_SRC_PBD_HPP_

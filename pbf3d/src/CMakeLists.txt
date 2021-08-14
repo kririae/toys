@@ -2,12 +2,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -pedantic-errors -Werror -Wextra -Wshadow -Wpointer-arith -Wformat=2 -Weffc++ -Wall")
-if (${IS_CLANG_COMPILER})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wloop-analysis")
-endif ()
 
+# Optimize options
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=znver2 -mtune=znver2 -ftree-vectorize -ffast-math -funroll-loops -fomit-frame-pointer -pipe")
 
-# options
 set(USE_COMPACT_N_SEARCH OFF)
 
 if (USE_COMPACT_N_SEARCH)
