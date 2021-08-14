@@ -125,6 +125,9 @@ void RTGUI_particles::render_particles() const
   static float rotate_y = 0;
   if (rotate)
     rotate_y += 0.005;
+  else
+    rotate_y = 45.0f;
+
   if (rotate_y > 360.0f)
     rotate_y = 0;
 
@@ -132,7 +135,7 @@ void RTGUI_particles::render_particles() const
   model = glm::scale(model, glm::vec3(1 / border));
   model = glm::rotate(model, rotate_y, glm::vec3(0.0f, 1.0f, 0.0f));
 
-  auto camera_pos = glm::vec3(1.0f, 3.0f, 6.0f);
+  auto camera_pos = glm::vec3(0.0f, 3.0f, 6.0f);
   auto camera_center = glm::vec3(0.0f);
   auto camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
   auto view = glm::lookAt(camera_pos, camera_center, camera_up);

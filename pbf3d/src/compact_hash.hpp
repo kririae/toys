@@ -7,8 +7,6 @@
 
 #include "particle.hpp"
 
-static constexpr int MOD = 100007;
-
 class CompactHash {
   // Currently, a poor implementation (for correctness)
  public:
@@ -30,14 +28,15 @@ class CompactHash {
   float radius;
   std::vector<SPHParticle> data{};
   std::vector<std::vector<uint>> neighbor_map{};
-  std::vector<int> hash_map[MOD]{};
+  std::vector<std::vector<int>> hash_map{};
+  const int n_grids;
   const int MAX_NEIGHBOR_SIZE = 60;
 
   // hash function
-  [[nodiscard]] int hash(float x, float y, float z) const;
-  int hash(const glm::vec3 &p);
-  static int hash_from_grid(int u, int v, int w);
-  static int hash_from_grid(const glm::ivec3 &p);
-  [[nodiscard]] glm::ivec3 get_grid_index(const glm::vec3 &p) const;
+  [[nodiscard]] inline int hash(float x, float y, float z) const;
+  [[nodiscard]] inline int hash(const glm::vec3 &p);
+  [[nodiscard]] inline int hash_from_grid(int u, int v, int w) const;
+  [[nodiscard]] inline int hash_from_grid(const glm::ivec3 &p) const;
+  [[nodiscard]] inline glm::ivec3 get_grid_index(const glm::vec3 &p) const;
 };
 #endif  // PBF3D_SRC_COMPACT_HASH_HPP_

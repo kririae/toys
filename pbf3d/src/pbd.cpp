@@ -28,8 +28,9 @@ void PBDSolver::set_gui(RTGUI_particles *gui)
 
 void PBDSolver::callback()
 {
-  auto start = std::chrono::system_clock::now();
   assert(gui_ptr != nullptr);
+
+  static int interval = 60;
 
   auto &data = get_data();
   const auto pre_data = data;  // copy
@@ -44,17 +45,18 @@ void PBDSolver::callback()
   }
 
   // find all neighbors
+  auto dt_start = std::chrono::system_clock::now();
   ch_ptr->build();
+  auto dt_end = std::chrono::system_clock::now();
 
+  auto start = std::chrono::system_clock::now();
   // Jacobi iteration
   double c_i_sum = 0;
   long long n_neightbor_sum = 0;
 
+  std::vector<float> _lambda(data_size), c_i(data_size);
   int iter_cnt = iter;
   while (iter_cnt--) {
-    std::vector<float> _lambda, c_i;
-    _lambda.reserve(data.size());
-    c_i.reserve(data.size());
 
 #pragma omp parallel for default(none) \
     shared(data_size, c_i, c_i_sum, n_neightbor_sum, _lambda)
@@ -90,10 +92,6 @@ void PBDSolver::callback()
     }
   }
 
-  std::cout << "avg c_i: " << c_i_sum / data_size / iter << " | n_neighbor: "
-            << static_cast<float>(n_neightbor_sum) / data_size / iter
-            << std::endl;
-
   // update all velocity
   for (int i = 0; i < data_size; ++i) {
     auto &p = data[i];
@@ -102,10 +100,24 @@ void PBDSolver::callback()
 
   gui_ptr->set_particles(get_data());
 
+  // Logging part
+  if ((--interval) != 0)
+    return;
+
+  interval = 60;
+  std::cout << "--- callback start (interval: 60) ---" << std::endl;
+  std::cout << "NParticles: " << data_size << std::endl;
+  std::chrono::duration<float> dt_diff = dt_end - dt_start;
+  std::cout << "data_structure building complete: " << dt_diff.count() * 1000
+            << "ms" << std::endl;
   auto end = std::chrono::system_clock::now();
   std::chrono::duration<float> diff = end - start;
   std::cout << "calculation complete: " << diff.count() * 1000 << "ms"
             << std::endl;
+  std::cout << "avg c_i: " << c_i_sum / data_size / iter << " | n_neighbor: "
+            << static_cast<float>(n_neightbor_sum) / data_size / iter
+            << std::endl;
+  std::cout << std::endl;
 }
 
 void PBDSolver::add_particle(const SPHParticle &p)

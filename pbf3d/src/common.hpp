@@ -17,9 +17,9 @@
 #define NDEBUG
 #define PARALLEL
 
-constexpr float border = 10.0f;
+constexpr float border = 20.0f;
 constexpr float epsilon = 1e-5;
-constexpr bool rotate = true;
+constexpr bool rotate = false;
 // other pbf parameters are defined in pbd.cpp
 
 using color = glm::vec3;

@@ -2,15 +2,20 @@
 // Created by kr2 on 8/10/21.
 //
 
+// currently `index sort`
+
 #include "compact_hash.hpp"
 #include "common.hpp"
 #include "omp.h"
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <parallel/algorithm>
 
-CompactHash::CompactHash(float _radius) : radius(_radius)
+CompactHash::CompactHash(float _radius)
+    : radius(_radius), n_grids(glm::ceil(2 * border / radius) + 1)
 {
+  hash_map = std::vector<std::vector<int>>(n_grids * n_grids * n_grids);
 }
 
 void CompactHash::add_particle(const SPHParticle &p)
@@ -42,7 +47,6 @@ void CompactHash::build()
 {
   neighbor_map = std::vector<std::vector<uint>>(n_points());
   const int data_size = data.size();
-  const int n_grids = glm::ceil(border * 2 / radius) + 1;
 
   // Clear previous information
   for (auto &i : hash_map)
@@ -62,8 +66,8 @@ void CompactHash::build()
     for (int u = grid_index.x - 1; u <= grid_index.x + 1; ++u) {
       for (int v = grid_index.y - 1; v <= grid_index.y + 1; ++v) {
         for (int w = grid_index.z - 1; w <= grid_index.z + 1; ++w) {
-          if (u < 0 || v < 0 || w < 0 || u > n_grids || v > n_grids ||
-              w > n_grids)  // TODO: implement AABB
+          if (u < 0 || v < 0 || w < 0 || u >= n_grids || v >= n_grids ||
+              w >= n_grids)  // TODO: implement AABB
             continue;
 
           const int _hash_index = hash_from_grid(u, v, w);
@@ -77,50 +81,33 @@ void CompactHash::build()
     }
   }
 
-  std::for_each(neighbor_map.begin(), neighbor_map.end(), [](auto &x) {
-    std::sort(x.begin(), x.end());
-    auto end_unique = std::unique(x.begin(), x.end());
-    x.erase(end_unique, x.end());
-  });
 }
 
-int CompactHash::hash(float x, float y, float z) const
+inline int CompactHash::hash(float x, float y, float z) const
 {
-  static long long p1 = 73856093, p2 = 19349663, p3 = 83492791;
   const auto &grid_index = get_grid_index(glm::vec3(x, y, z));
-  const long long res = ((long long)(grid_index.x) * p1 ^
-                         (long long)(grid_index.y) * p2 ^
-                         (long long)(grid_index.z) * p3) %
-                        MOD;
-  return res;  // correct to positive
+  return hash_from_grid(grid_index);
 }
 
-int CompactHash::hash(const glm::vec3 &p)
+inline int CompactHash::hash(const glm::vec3 &p)
 {
   return hash(p.x, p.y, p.z);
 }
 
-glm::ivec3 CompactHash::get_grid_index(const glm::vec3 &p) const
+inline glm::ivec3 CompactHash::get_grid_index(const glm::vec3 &p) const
 {
   int u = (int)(glm::floor((p.x + border) / radius));
   int v = (int)(glm::floor((p.y + border) / radius));
   int w = (int)(glm::floor((p.z + border) / radius));
-
   return {u, v, w};
 }
 
-int CompactHash::hash_from_grid(int u, int v, int w)
+inline int CompactHash::hash_from_grid(int u, int v, int w) const
 {
-  static long long p1 = 73856093, p2 = 19349663, p3 = 83492791;
-  const auto &grid_index = glm::ivec3(u, v, w);
-  const long long res = ((long long)(grid_index.x) * p1 ^
-                         (long long)(grid_index.y) * p2 ^
-                         (long long)(grid_index.z) * p3) %
-                        MOD;
-  return res;  // correct to positive
+  return u + v * n_grids + w * n_grids * n_grids;
 }
 
-int CompactHash::hash_from_grid(const glm::ivec3 &p)
+inline int CompactHash::hash_from_grid(const glm::ivec3 &p) const
 {
   return hash_from_grid(p.x, p.y, p.z);
 }

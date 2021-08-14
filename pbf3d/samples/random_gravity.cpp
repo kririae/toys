@@ -10,7 +10,7 @@
 
 constexpr int NParticles = 2000;
 constexpr int WIDTH = 800, HEIGHT = 600;
-constexpr float radius = 1.0f;
+constexpr float radius = 1.8f;
 
 int main()
 {
@@ -29,8 +29,8 @@ int main()
   //
   // std::cout << "NParticles: " << NParticles << std::endl;
 
-  const int _range = border / 1.4f;
-  const float coeff = 0.8f;
+  const int _range = border / 1.5f;
+  const float coeff = 0.6f;
   int cnt = 0;
   for (float x = -_range; x <= _range; x += coeff * radius) {
     for (float y = -_range; y <= _range; y += coeff * radius) {
@@ -40,7 +40,6 @@ int main()
       }
     }
   }
-  std::cout << "NParticles: " << cnt << std::endl;
 
   gui.main_loop(callback);
   gui.del();
