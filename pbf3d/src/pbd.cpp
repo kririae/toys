@@ -16,12 +16,14 @@ constexpr float denom_epsilon = 20.0f;
 constexpr int iter = 3;
 
 PBDSolver::PBDSolver(float _radius)
-    : ch_ptr(std::make_shared<CompactHash>(_radius)), radius(_radius)
+    : ch_ptr(std::make_shared<CompactHash>(_radius)),
+      radius(_radius),
+      radius2(radius * radius)
 {
-  mass = 4.0f / 3.0f * glm::pi<float>() * radius * radius;
+  mass = 4.0f / 3.0f * glm::pi<float>() * radius2;
 }
 
-void PBDSolver::set_gui(RTGUI_particles *gui)
+void PBDSolver::set_gui(RTGUI_particles *gui) noexcept
 {
   gui_ptr = gui;
 }
@@ -70,7 +72,7 @@ void PBDSolver::callback()
       float _denom = 0.0f;
       const auto &neighbor_vec = ch_ptr->neighbor_vec(i);
       for (const auto &j : neighbor_vec)
-        _denom += glm::pow(glm::length(grad_c(i, j)), 2.0f);
+        _denom += fpow(glm::length(grad_c(i, j)), 2.0f);
 
       _lambda[i] = -c_i[i] / (_denom + denom_epsilon);
     }
@@ -165,32 +167,31 @@ glm::vec3 PBDSolver::grad_c(int p_i, int p_k)
   return 1.0f / rho_0 * res;
 }
 
-float PBDSolver::poly6(float r, float d)
+float PBDSolver::poly6(float r, float d) noexcept
 {
   r = glm::clamp(glm::abs(r), 0.0f, d);
   const float t = (d * d - r * r) / (d * d * d);
   return 315.0f / (64 * glm::pi<float>()) * t * t * t;
 }
 
-glm::vec3 PBDSolver::grad_spiky(glm::vec3 v, float d)
+glm::vec3 PBDSolver::grad_spiky(glm::vec3 v, float d) noexcept
 {
   float len = glm::length(v);
   glm::vec3 res(0.0f);
   if (0 < len && len <= d)
-    res = static_cast<float>(-45 / (glm::pi<float>() * glm::pow(d, 6)) *
-                             glm::pow(d - len, 2)) *
-          glm::normalize(v);
+    res = float(-45 / (glm::pi<float>() * fpow(d, 6)) * fpow(d - len, 2)) * v /
+          len;
   return res;
 }
 
-float PBDSolver::compute_s_corr(int p_i, int p_j)
+inline float PBDSolver::compute_s_corr(int p_i, int p_j)
 {
   float k = 0.1f;  // k
   float n = 4.0f;
   float delta_q = 0.3f * radius;
   const auto &data = get_data();
   float r = glm::length(data[p_i].pos - data[p_j].pos);
-  return -k * glm::pow(poly6(r, radius) / poly6(delta_q, radius), n);
+  return -k * fpow(poly6(r, radius) / poly6(delta_q, radius), n);
 }
 
 std::vector<SPHParticle> &PBDSolver::get_data()

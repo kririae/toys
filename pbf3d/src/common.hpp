@@ -14,21 +14,22 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <random>
 
-#define NDEBUG
-#define PARALLEL
-
 constexpr float border = 20.0f;
 constexpr float epsilon = 1e-5;
 constexpr bool rotate = false;
+constexpr float radius = 1.8f;
 // other pbf parameters are defined in pbd.cpp
 
 using color = glm::vec3;
+using namespace std::literals::string_literals;
 
 glm::vec3 color_ramp(float t, const color &col_left, const color &col_right);
 
+[[maybe_unused]] float fpow(float a, int b);
+
 class Random {
  public:
-  Random();
+  Random() noexcept;
   float rand();
 
  private:
@@ -36,5 +37,7 @@ class Random {
   std::mt19937 mt;
   std::uniform_real_distribution<float> dist;
 };
+
+extern Random rd_global;
 
 #endif  // PBF3D_SRC_COMMON_HPP_

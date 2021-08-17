@@ -7,6 +7,8 @@
 
 #include "particle.hpp"
 
+constexpr int MAX_NEIGHBOR_SIZE = 60;
+
 class CompactHash {
   // Currently, a poor implementation (for correctness)
  public:
@@ -25,16 +27,15 @@ class CompactHash {
   std::vector<uint> &neighbor_vec(uint index);
 
  private:
-  float radius;
+  const float radius, radius2;
+  const int n_grids;
   std::vector<SPHParticle> data{};
   std::vector<std::vector<uint>> neighbor_map{};
   std::vector<std::vector<int>> hash_map{};
-  const int n_grids;
-  const int MAX_NEIGHBOR_SIZE = 60;
 
   // hash function
   [[nodiscard]] inline int hash(float x, float y, float z) const;
-  [[nodiscard]] inline int hash(const glm::vec3 &p);
+  [[nodiscard]] inline int hash(const glm::vec3 &p) const;
   [[nodiscard]] inline int hash_from_grid(int u, int v, int w) const;
   [[nodiscard]] inline int hash_from_grid(const glm::ivec3 &p) const;
   [[nodiscard]] inline glm::ivec3 get_grid_index(const glm::vec3 &p) const;

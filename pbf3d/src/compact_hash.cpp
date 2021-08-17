@@ -8,13 +8,15 @@
 #include "common.hpp"
 #include "omp.h"
 #include <algorithm>
-#include <chrono>
 #include <iostream>
 #include <parallel/algorithm>
 
 CompactHash::CompactHash(float _radius)
-    : radius(_radius), n_grids(glm::ceil(2 * border / radius) + 1)
+    : radius(_radius),
+      radius2(radius * radius),
+      n_grids(int(glm::ceil(2 * border / radius) + 1))
 {
+  // Initialize to index sort
   hash_map = std::vector<std::vector<int>>(n_grids * n_grids * n_grids);
 }
 
@@ -30,27 +32,26 @@ std::vector<SPHParticle> &CompactHash::get_data()
 
 int CompactHash::n_points() const
 {
-  return data.size();
+  return int(data.size());
 }
 
 int CompactHash::n_neighbor(uint index) const
 {
-  return neighbor_map[index].size();
+  return int(neighbor_map[index].size());
 }
 
 int CompactHash::neighbor(uint index, uint neighbor_index) const
 {
-  return neighbor_map[index][neighbor_index];
+  return int(neighbor_map[index][neighbor_index]);
 }
 
 void CompactHash::build()
 {
   neighbor_map = std::vector<std::vector<uint>>(n_points());
-  const int data_size = data.size();
+  const int data_size = int(data.size());
 
   // Clear previous information
-  for (auto &i : hash_map)
-    i.clear();
+  std::for_each(hash_map.begin(), hash_map.end(), [&](auto &i) { i.clear(); });
 
   // Initialize the hash_map
   for (int i = 0; i < data_size; ++i) {
@@ -73,14 +74,14 @@ void CompactHash::build()
           const int _hash_index = hash_from_grid(u, v, w);
           const std::vector<int> &map_item = hash_map[_hash_index];
           std::for_each(map_item.cbegin(), map_item.cend(), [&](int j) {
-            if (center.dist(data[j]) <= radius)
+            if (center.dist2(data[j]) <= radius2 &&
+                neighbor_map[i].size() <= ulong(MAX_NEIGHBOR_SIZE))
               neighbor_map[i].push_back(j);
           });
         }
       }
     }
   }
-
 }
 
 inline int CompactHash::hash(float x, float y, float z) const
@@ -89,7 +90,7 @@ inline int CompactHash::hash(float x, float y, float z) const
   return hash_from_grid(grid_index);
 }
 
-inline int CompactHash::hash(const glm::vec3 &p)
+inline int CompactHash::hash(const glm::vec3 &p) const
 {
   return hash(p.x, p.y, p.z);
 }

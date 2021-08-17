@@ -3,14 +3,22 @@
 //
 
 #include "common.hpp"
-#include <random>
+
+[[maybe_unused]] float fpow(float a, int b)
+{
+  float res = 1.0f;
+  for (; b; b >>= 1, a *= a)
+    if (b & 1)
+      res *= a;
+  return res;
+}
 
 glm::vec3 color_ramp(float t, const color &col_left, const color &col_right)
 {
   return (1 - t) * col_left + t * col_right;
 }
 
-Random::Random() : mt(rd()), dist(-border, border)
+Random::Random() noexcept : mt(rd()), dist(-border, border)
 {
 }
 
@@ -19,4 +27,4 @@ float Random::rand()
   return dist(mt);
 }
 
-Random rd_global;
+[[maybe_unused]] Random rd_global;

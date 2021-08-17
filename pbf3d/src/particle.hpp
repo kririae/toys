@@ -12,10 +12,11 @@
 class Particle {
  public:
   glm::vec3 pos;
-  Particle(glm::vec3 _pos);
+  explicit Particle(glm::vec3 _pos);
   Particle(float x, float y, float z);
   virtual ~Particle() = default;
-  float dist(const Particle &p) const;
+  [[nodiscard]] float dist2(const Particle &p) const noexcept;
+  [[nodiscard]] float dist(const Particle &p) const noexcept;
 
  protected:
 };

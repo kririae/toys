@@ -151,7 +151,7 @@ void RTGUI_particles::render_particles() const
 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_MULTISAMPLE);
-  glPointSize(2);
+  glPointSize(1.8f);
 
   glDrawArrays(GL_POINTS, 0, p.size());
   glBindVertexArray(0);
