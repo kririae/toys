@@ -14,7 +14,7 @@ SNAPSHOT_FORMAT = '%Y-%m-%d'
 STORAGE_PATH = Path('/var/run/media/kr2/KRR_STORAGE/backups')
 AGE_PUBKEY = Path('/home/kr2/kririae.keys')
 LOG_FORMAT = "%(asctime)s (%(levelname)s): %(message)s"
-NKEEP = 3
+NKEEP = 2
 
 # logger initialization
 logging.basicConfig(filename='/home/kr2/Misc/btrfs-auto-backup.log',
@@ -139,6 +139,36 @@ class Subvol:
         else:
             logger.warning('send snapshot failed: %r', snapshot_dst)
 
+    def remove_snapshots_host(self):
+        if not SNAPSHOT_ROOT.exists():
+            logger.warning(
+                'snapshot src do not exists, cancel deleting: %r', SNAPSHOT_ROOT)
+            return
+        out_host = self.outdate_snapshots_host()
+        for snapshot_name in out_host:
+            path = SNAPSHOT_ROOT / snapshot_name
+            if not path.exists():
+                logger.warning(
+                    'snapshot %r on host do not exists, cancel deleting', path)
+            else:
+                # destructive operation
+                exe_cmd(f'sudo btrfs subvol del {path}')
+
+    def remove_snapshots_device(self):
+        if not STORAGE_PATH.exists():
+            logger.info(
+                'device do not exists, cancel deleting: %r', STORAGE_PATH)
+            return
+        out_dev = self.outdate_snapshots_device()
+        for fname in out_dev:
+            path = STORAGE_PATH / fname
+            if not path.exists():
+                logger.warning(
+                    'snapshot %r on device do not exists, cancel deleting', path)
+            else:
+                # destructive operation
+                exe_cmd(f'rm {path}')
+
 
 # Path, suffix name, snapshot interval, send snapshot interval
 BACKUP_LIST = [Subvol(Path('/'), 'root', 2, 5),
@@ -170,6 +200,8 @@ def scheduler():
             logger.info('should delete on host: %r', out_host)
         if len(out_dev) >= 1:
             logger.info('should delete on dev: %r', out_dev)
+        i.remove_snapshots_host()
+        i.remove_snapshots_device()
 
 
 def main():

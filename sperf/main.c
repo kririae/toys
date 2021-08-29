@@ -11,7 +11,7 @@
 
 #define BUF_SIZE          1024
 #define SAMPLING_INTERVAL 1000  // Unit: ms
-#define MOD               10023
+#define MOD               100023
 
 #define VALID_ITEM(x) (hashTable[x].name != NULL)
 
@@ -122,6 +122,7 @@ static void printHashTable() {
   qsort(
       tmp_hash_table, MOD, sizeof(struct HashTableItem), compareHashTableItem);
 
+  printf("--- sperf info ---\n");
   // Format HashTable
   for (int i = 0; i < MOD; ++i) {
     if (tmp_hash_table[i].name != NULL) {
