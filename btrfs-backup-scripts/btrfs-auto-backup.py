@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
-import os
 import re
 import logging
-import functools
 import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
