@@ -28,16 +28,20 @@ def find_block(block, ja_idx):
             return i
 
 
-def parse_block(block):
+def parse_block(name: str, block):
+    name = name.split('.')[0] + '.script'
+    f = open(name, 'w')
     for idx, i in enumerate(block):
         if 'ja = {' not in i or '= {' not in i:
             continue
         block_str = block[find_block(block, idx)]
         regex = r"^block_(\d+)"
         matches = list(re.finditer(regex, block_str))[0]
-        print(f'    block num: {matches.group(1)}')
+        f.writelines(f'block: {matches.group(1)}\n')
+        print(f'block: {matches.group(1)}')
 
         layer = 0
+        buffer = ""
         while True:
             line = block[idx]
             if '{' in line:
@@ -47,16 +51,28 @@ def parse_block(block):
             assert layer >= 0
 
             if 'name = {' in line:
-                print(f'      name: {line[9:-3]}')
-            if line.startswith('"'):
-                print(f'      script: {line[1:-2]}')
+                f.writelines(f'  name: {line[9:-3]}\n')
+                print(f'  name: {line[9:-3]}')
+            elif '{"ruby",' in line:
+                buffer += line[15:-3]
+            elif line.startswith('"'):
+                if '{"ruby",' not in block[idx - 1]:
+                    buffer += line[1:-2]
+                # else:
+                #     buffer += f'^({line[1:-2]})'
+            elif line == '{"rt2"},':
+                f.writelines(f"  script: {buffer}\n")
+                f.writelines(f"  trans: \n")
+                print(f"  script: {buffer}")
+                buffer = ""
             idx += 1
             if layer == 0:
                 break
+    f.close()
 
 
 def save_file(filename: str, content: bytes):
-    extract_path = Path('.') / 'extract'
+    extract_path = Path('.') / 'extract_fake'
     file_path = extract_path / filename
     file_dir = file_path.parent
     print(f'saving file to: {str(file_path)}')
@@ -78,14 +94,14 @@ def repacker(dirname: str):
     f.write(struct.pack('I', index_size))
     f.write(struct.pack('i', len(file_list)))
 
-    offset = index_size + 7 # start of files
+    offset = index_size + 7  # start of files
     for i in file_list:
         file_size = (repack_dir / i).stat().st_size
         print(f'writing index: {str(i)}')
         fake_file = str(i).replace('/', '\\').encode('utf-8')
         f.write(struct.pack('i', len(fake_file)))
         f.write(fake_file)
-        f.write(b'\x00\x00\x00\x00') # empty 4 bytes
+        f.write(b'\x00\x00\x00\x00')  # empty 4 bytes
         f.write(struct.pack('i', offset))
         f.write(struct.pack('I', file_size))
         offset += file_size
@@ -100,6 +116,7 @@ def repacker(dirname: str):
         print(f'writing content: {str(i)}')
         f.write(decrypt((repack_dir / i).read_bytes(), key.digest()))
     print(f'key: {key.hexdigest()}')
+    print(index_size)
     f.close()
 
 
@@ -136,10 +153,12 @@ def unpacker(filename: str):
     key = hashlib.sha1()
     key.update(index)
 
+    f_order = open('order.txt', 'w')
+
     for i in range(count):
         path_len = read_int()
         path = f.read(path_len).decode('utf-8')
-        # name = path.split('\\')[-1]
+        name = path.split('\\')[-1]
 
         # convert to to unix path
         path = path.replace('\\', '/')
@@ -165,16 +184,17 @@ def unpacker(filename: str):
 
         save_file(path, file_content)
 
-        # block = file_content.split('\r\n')
-        # block = [i.replace('\t', '') for i in block]
-        # parse_block(block)
+        if 'ast' in name and '01' in name:
+            block = file_content.decode('utf-8').split('\r\n')
+            block = [i.replace('\t', '') for i in block]
+            parse_block(name, block)
 
         # write line without new line
         # with open(name, 'wb') as out_f:
         # out_f.write(file_content.encode('utf-8'))
 
         f.seek(_cur, 0)  # restore current position
-    print(key.hexdigest())
+    f_order.close()
     f.close()
 
 
