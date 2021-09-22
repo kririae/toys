@@ -10,7 +10,7 @@
 # Please see https://i3wm.org/docs/userguide.html for a complete reference!
 
 set $mod Mod1
-set $bg_img /home/kririae/Pictures/87654287_p0.png
+set $bg_img /home/kririae/Pictures/desktop.png
 
 new_window none
 new_float none
