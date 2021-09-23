@@ -9,6 +9,7 @@
 let mapleader = "\<space>"
 nmap <leader>w :w!<cr>
 nmap <leader>q :w!<cr>
+cmap w!! w !sudo tee > /dev/null %
 
 " Remap <esc>
 " setxbkmap -option caps:swapescape in terminal
@@ -119,7 +120,7 @@ colorscheme sonokai
 "    \ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
 
 " Start NERDTree and put the cursor back in the other window.
-autocmd VimEnter * NERDTree | wincmd p
+" autocmd VimEnter * NERDTree | wincmd p
 
 " Exit Vim if NERDTree is the only window left.
 autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() |

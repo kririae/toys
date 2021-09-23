@@ -1,0 +1,64 @@
+window:
+  dimensions:
+    columns: 0
+    lines: 0
+  position:
+    x: 0
+    y: 0
+  padding:
+    x: 0
+    y: 0
+  decorations: none
+  title: Alacritty
+  dynamic_title: false
+  gtk_theme_variant: dark
+scrolling:
+  history: 50000
+font:
+  normal:
+    family: SauceCodePro Nerd Font
+    style: Regular
+  bold:
+    family: SauceCodePro Nerd Font
+    style: Bold
+  italic:
+    family: SauceCodePro Nerd Font
+    style: Italic
+  bold_italic:
+    family: SauceCodePro Nerd Font
+    style: Bold Italic
+  size: 11
+  offset:
+    x: 0
+    y: 0
+  glyph_offset:
+    x: 0
+    y: 0
+background_opacity: 0.9
+colors:
+  name: Google (dark)
+  author: Chris Kempson
+  primary:
+    background: "#1d1f21"
+    foreground: "#c5c8c6"
+  cursor:
+    text: "#1d1f21"
+    cursor: "#c5c8c6"
+  normal:
+    black: "#1d1f21"
+    red: "#cc342b"
+    green: "#198844"
+    yellow: "#fba922"
+    blue: "#3971ed"
+    magenta: "#a36ac7"
+    cyan: "#3971ed"
+    white: "#c5c8c6"
+  bright:
+    black: "#969896"
+    red: "#cc342b"
+    green: "#198844"
+    yellow: "#fba922"
+    blue: "#3971ed"
+    magenta: "#a36ac7"
+    cyan: "#3971ed"
+    white: "#ffffff"
