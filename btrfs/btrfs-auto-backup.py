@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 SNAPSHOT_ROOT = Path('/.snapshots')
 SNAPSHOT_FORMAT = '%Y-%m-%d'
-STORAGE_PATH = Path('/var/run/media/kr2/KRR_STORAGE/backups')
+STORAGE_PATH = Path('/var/run/media/kr2/KRR_STORAGE/backups/krr-desktop')
 AGE_PUBKEY = Path('/home/kr2/kririae.keys')
 LOG_FORMAT = "%(asctime)s (%(levelname)s): %(message)s"
 NKEEP = 2

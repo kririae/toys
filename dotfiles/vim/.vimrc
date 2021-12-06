@@ -65,7 +65,8 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 " Airline
 Plug 'vim-airline/vim-airline'
 Plug 'majutsushi/tagbar'
-let g:airline#extensions#tagbar#enabled=1
+let g:airline#extensions#tagbar#enabled = 1
+let g:airline_powerline_fonts = 1
 
 " Airline theme
 Plug 'vim-airline/vim-airline-themes'
@@ -77,7 +78,8 @@ let g:UltiSnipsJumpForwardTrigger = '<tab>'
 let g:UltiSnipsJumpBackwardTrigger = '<s-tab>'
 
 " Color Theme
-Plug 'sainnhe/sonokai'
+Plug 'sainnhe/everforest'
+Plug 'sainnhe/edge'
 
 " Easy Motion
 Plug 'easymotion/vim-easymotion'
@@ -111,8 +113,15 @@ Plug 'mhinz/vim-startify'
 
 call plug#end()
 
-let g:sonokai_diagnostic_line_hightlight = 0
-colorscheme sonokai
+let g:airline_theme = 'everforest'
+
+if has('termguicolors')
+  set termguicolors
+endif
+
+set background=dark
+let g:everforest_background = 'hard'
+colorscheme everforest
 
 " Start NERDTree when Vim starts with a directory argument.
 " autocmd StdinReadPre * let s:std_in=1
@@ -126,3 +135,4 @@ colorscheme sonokai
 autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() |
     \ quit | endif
 
+set clipboard=unnamedplus
