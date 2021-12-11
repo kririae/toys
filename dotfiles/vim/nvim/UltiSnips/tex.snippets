@@ -4,7 +4,7 @@ snippet bg "begin{} / end{}" b
 \end{$1}
 endsnippet
 
-snippet im "Math" w
+snippet im "Inline math" w
 $${1}$`!p
 if t[2] and t[2][0] not in [',', '.', '?', '-', ' ']:
     snip.rv = ' '
@@ -13,12 +13,11 @@ else:
 `$2
 endsnippet
 
-snippet bf "Math" w
+snippet bf "Insert \\textbf" w
 \\textbf{$1}$2
 endsnippet
 
-
-snippet bm "Math" w
+snippet bm "Insert block math" w
 \[
 $1
 .\] $0

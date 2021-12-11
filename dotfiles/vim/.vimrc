@@ -87,17 +87,11 @@ Plug 'vim-airline/vim-airline-themes'
 
 " User-snippets
 Plug 'sirver/ultisnips'
-let g:UltiSnipsExpandTrigger="<s-tab>"
-let g:UltiSnipsJumpForwardTrigger="<s-tab>"
-let g:UltiSnipsJumpBackwardTrigger="<s-tab>"
-let g:ulti_expand_or_jump_res = 0 "default value, just set once
-
-" Enter as trigger
-function! Ulti_ExpandOrJump_and_getRes()
- call UltiSnips#ExpandSnippetOrJump()
- return g:ulti_expand_or_jump_res
-endfunction
-inoremap <CR> <C-R>=(Ulti_ExpandOrJump_and_getRes() > 0)?"":"\n"<CR>
+let g:UltiSnipsExpandTrigger = '<Plug>(ultisnips_expand)'
+let g:UltiSnipsJumpForwardTrigger = '<Plug>(ultisnips_jump_forward)'
+let g:UltiSnipsJumpBackwardTrigger = '<Plug>(ultisnips_jump_backward)'
+let g:UltiSnipsListSnippets = '<c-x><c-s>'
+let g:UltiSnipsRemoveSelectModeMappings = 0
 
 " Color Theme
 Plug 'sainnhe/edge'
@@ -166,6 +160,7 @@ elseif has('nvim')
   Plug 'quangnguyen30192/cmp-nvim-ultisnips'
 endif
 
+" Format configuration.
 Plug 'lukas-reineke/format.nvim'
 call plug#end()
 
@@ -181,7 +176,7 @@ call plug#end()
 autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() |
     \ quit | endif
 
-set clipboard=unnamedplus
+" set clipboard=unnamedplus
 
 " Tex settings
 let g:tex_flavor = 'latex'
@@ -204,6 +199,7 @@ let g:everforest_background = 'hard'
 colorscheme everforest
 
 set completeopt=menu,menuone,noselect
+
 lua << EOF
 require"format".setup {
   ["*"] = {{cmd = {"sed -i 's/[ \t]*$//'"}}},
@@ -214,7 +210,6 @@ require"format".setup {
       end_pattern = "^EOF$"
     }
   }
-  -- tex = {cmd = {"latexindent -w"}} // currenrly not configured
 }
 
 local cmp = require "cmp"
@@ -321,7 +316,7 @@ cmp.setup({
     ["<CR>"] = cmp.mapping({
       i = cmp.mapping.confirm({
         behavior = cmp.ConfirmBehavior.Replace,
-        select = false
+        select = true
       }),
       c = function(fallback)
         if cmp.visible() then
@@ -336,12 +331,67 @@ cmp.setup({
                                {{name = "buffer"}})
 })
 
+-- Use buffer source for `/`.
+cmp.setup.cmdline('/', {
+  completion = {autocomplete = false},
+  sources = {
+    -- { name = 'buffer' }
+    {name = 'buffer', opts = {keyword_pattern = [=[[^[:blank:]].*]=]}}
+  }
+})
+
+-- Use cmdline & path source for ':'.
+cmp.setup.cmdline(':', {
+  completion = {autocomplete = false},
+  sources = cmp.config.sources({{name = 'path'}}, {{name = 'cmdline'}})
+})
+
 local capabilities = require("cmp_nvim_lsp").update_capabilities(vim.lsp
                                                                      .protocol
                                                                      .make_client_capabilities())
+
+-- LSP configurations.
+local on_attach = function(client, bufnr)
+  local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
+  local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
+
+  -- Enable completion triggered by <c-x><c-o>
+  buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
+
+  -- Mappings.
+  local opts = {noremap = true, silent = true}
+
+  -- See `:help vim.lsp.*` for documentation on any of the below functions
+  buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
+  buf_set_keymap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
+  buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
+  buf_set_keymap('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>', opts)
+  buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
+  buf_set_keymap('n', '<space>wa',
+                 '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
+  buf_set_keymap('n', '<space>wr',
+                 '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
+  buf_set_keymap('n', '<space>wl',
+                 '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>',
+                 opts)
+  buf_set_keymap('n', '<space>D', '<cmd>lua vim.lsp.buf.type_definition()<CR>',
+                 opts)
+  buf_set_keymap('n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+  buf_set_keymap('n', '<space>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>',
+                 opts)
+  buf_set_keymap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
+  buf_set_keymap('n', '<space>e', '<cmd>lua vim.diagnostic.open_float()<CR>',
+                 opts)
+  buf_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+  buf_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
+  buf_set_keymap('n', '<space>q', '<cmd>lua vim.diagnostic.setloclist()<CR>',
+                 opts)
+  buf_set_keymap('n', '<space>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+end
+
 require"lspconfig".texlab.setup {
   cmd = {"/home/kr2/.local/share/nvim/lsp_servers/latex/texlab"},
-  capabilities = capabilities
+  capabilities = capabilities,
+  on_attach = on_attach
 }
 EOF
-
