@@ -10,7 +10,8 @@ from datetime import datetime, timedelta
 SNAPSHOT_ROOT = Path('/.snapshots')
 SNAPSHOT_FORMAT = '%Y-%m-%d'
 STORAGE_PATH = Path('/var/run/media/kr2/KRR_STORAGE/backups/krr-desktop')
-AGE_PUBKEY = Path('/home/kr2/kririae.keys')
+AGE_PUBKEY = Path('/home/kr2/kririae.keys') # Or make sure that GPGkey is available
+GPG_RECIPIENT = 'kriaeth <kriaeth@outlook.com>'
 LOG_FORMAT = "%(asctime)s (%(levelname)s): %(message)s"
 NKEEP = 2
 
@@ -115,7 +116,7 @@ class Subvol:
             return
 
         zstd_suffix = '.zst' if zstd else ''
-        age_suffix = '.age' if age else ''
+        age_suffix = '.gpg' if age else ''
         snapshot_dst = STORAGE_PATH / \
             f'{current}_{self.suffix}.full{zstd_suffix}{age_suffix}'
 
@@ -128,7 +129,7 @@ class Subvol:
         if zstd:
             cmd += ' | zstd -T0 -'
         if age:
-            cmd += f' | age -R {AGE_PUBKEY} -'
+            cmd += f' | gpg --encrypt --trust-model always -r "{GPG_RECIPIENT}"'
         cmd += f' > {snapshot_dst}'
         exe_cmd(cmd)
 
