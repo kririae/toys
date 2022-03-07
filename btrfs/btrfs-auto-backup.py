@@ -9,23 +9,22 @@ from datetime import datetime, timedelta
 
 SNAPSHOT_ROOT = Path('/.snapshots')
 SNAPSHOT_FORMAT = '%Y-%m-%d'
-STORAGE_PATH = Path('/var/run/media/kr2/KRR_STORAGE/backups/krr-desktop')
+STORAGE_PATH = Path('/mnt/Work/Backups/krr-desktop')
 AGE_PUBKEY = Path('/home/kr2/.age/key.pub')
 LOG_FORMAT = "%(asctime)s (%(levelname)s): %(message)s"
 NKEEP = 2
 
 # logger initialization
-logging.basicConfig(filename='/home/kr2/Misc/btrfs-auto-backup.log',
+logging.basicConfig(filename='/var/log/btrfs-auto-backup.log',
                     level=logging.DEBUG, format=LOG_FORMAT)
 logger = logging.getLogger(__name__)
 
 
-def exe_cmd(cmd: str) -> bool:
+def exe_cmd(cmd: str):
     logger.info('execute: %r', cmd)
     ps = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = ps.communicate()[0].decode('utf-8')
     logger.info('exe res: %r', output)
-    return ps.returncode == 0
 
 
 def ext_time(x):
@@ -82,7 +81,7 @@ class Subvol:
             return True
         return datetime.now() - ext_time(ls[-1]) > timedelta(days=self.snapshot_inter)
 
-    def should_send_snapshot(self) -> bool:
+    def should_send_snapshot(self):
         if not STORAGE_PATH.exists():
             return False
         ls = self.__snapshot_list(STORAGE_PATH, host=False)
@@ -91,32 +90,29 @@ class Subvol:
             return True
         return datetime.now() - ext_time(ls[-1]) > timedelta(days=self.send_inter)
 
-    def take_snapshot(self) -> bool:
+    def take_snapshot(self):
         """Take a snapshot there isn't a snapshot already"""
         current = datetime.now().strftime(SNAPSHOT_FORMAT)
         snapshot_path = SNAPSHOT_ROOT / f'{current}_{self.suffix}'
         logger.info('try to take snapshot: %r', snapshot_path)
         if snapshot_path.exists():
             logger.info('snapshot already exists: %r', snapshot_path)
-            return False
-        success = exe_cmd(
-            f'sudo btrfs subvol snapshot -r {self.path} {snapshot_path}')
+            return
+        exe_cmd(f'sudo btrfs subvol snapshot -r {self.path} {snapshot_path}')
 
-        if snapshot_path.exists() and success:
+        if snapshot_path.exists():
             logger.info('snapshot success: %r', snapshot_path)
-            return True
         else:
             logger.warning('snapshot failed: %r', snapshot_path)
-            return False
 
-    def send_snapshots_to_device(self, zstd=True, age=True) -> bool:
+    def send_snapshots_to_device(self, zstd=True, age=True):
         """Send snapshot to device if {device exists, there's a snapshot today taken already}"""
         current = datetime.now().strftime(SNAPSHOT_FORMAT)
         snapshot_src = SNAPSHOT_ROOT / f'{current}_{self.suffix}'
         if not snapshot_src.exists():
             logger.warning(
                 'snapshot src do not exists, cancel sending: %r', snapshot_src)
-            return False
+            return
 
         zstd_suffix = '.zst' if zstd else ''
         age_suffix = '.age' if age else ''
@@ -126,7 +122,7 @@ class Subvol:
         logger.info('try to send snapshot: %r', snapshot_dst)
         if snapshot_dst.exists():
             logger.info('snapshot already exists: %r', snapshot_dst)
-            return False
+            return
 
         cmd = f'sudo btrfs send {SNAPSHOT_ROOT / snapshot_src}'
         if zstd:
@@ -134,50 +130,42 @@ class Subvol:
         if age:
             cmd += f' | age -R {AGE_PUBKEY} -'
         cmd += f' > {snapshot_dst}'
-        success = exe_cmd(cmd)
+        exe_cmd(cmd)
 
-        if snapshot_dst.exists() and success:
+        if snapshot_dst.exists():
             logger.info('send snapshot success: %r', snapshot_dst)
-            return True
         else:
             logger.warning('send snapshot failed: %r', snapshot_dst)
-            return False
 
-    def remove_snapshots_host(self) -> bool:
+    def remove_snapshots_host(self):
         if not SNAPSHOT_ROOT.exists():
             logger.warning(
                 'snapshot src do not exists, cancel deleting: %r', SNAPSHOT_ROOT)
-            return False
+            return
         out_host = self.outdate_snapshots_host()
-        success = False
         for snapshot_name in out_host:
             path = SNAPSHOT_ROOT / snapshot_name
             if not path.exists():
                 logger.warning(
                     'snapshot %r on host do not exists, cancel deleting', path)
-                return False
             else:
                 # destructive operation
-                success = success and exe_cmd(f'sudo btrfs subvol del {path}')
-        return success
+                exe_cmd(f'sudo btrfs subvol del {path}')
 
     def remove_snapshots_device(self):
         if not STORAGE_PATH.exists():
             logger.info(
                 'device do not exists, cancel deleting: %r', STORAGE_PATH)
-            return False
+            return
         out_dev = self.outdate_snapshots_device()
-        success = False
         for fname in out_dev:
             path = STORAGE_PATH / fname
             if not path.exists():
                 logger.warning(
                     'snapshot %r on device do not exists, cancel deleting', path)
-                return False
             else:
                 # destructive operation
-                success = success and exe_cmd(f'rm {path}')
-        return success
+                exe_cmd(f'rm {path}')
 
 
 # Path, suffix name, snapshot interval, send snapshot interval
@@ -199,35 +187,19 @@ def scheduler():
     """
 
     for i in BACKUP_LIST:
-        # TODO: add error type
-        take_status = False
-        send_status = False
         if i.should_take_snapshot():
-            take_status = i.take_snapshot()
+            i.take_snapshot()
         if i.should_send_snapshot():
-            send_status = i.send_snapshots_to_device()
+            i.send_snapshots_to_device()
 
-        assert(take_status != None)
-        assert(send_status != None)
         out_host = i.outdate_snapshots_host()
         out_dev = i.outdate_snapshots_device()
         if len(out_host) >= 1:
             logger.info('should delete on host: %r', out_host)
         if len(out_dev) >= 1:
             logger.info('should delete on dev: %r', out_dev)
-
-        # remove destructive operations currently
-        if take_status:
-            # i.remove_snapshots_host()
-            pass
-        else:
-            logger.error('snapshot take failed')
-
-        if send_status:
-            # i.remove_snapshots_device()
-            pass
-        else:
-            logger.error('snapshot send failed')
+        i.remove_snapshots_host()
+        i.remove_snapshots_device()
 
 
 def main():
